@@ -1,60 +1,63 @@
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 html,
-body {
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-}
-
+body,
 #root {
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-#experience-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
+body {
+  background: #000;
+  font-family: Arial, sans-serif;
 }
 
-.webgl {
-    position: fixed;
-    top: 0;
-    left: 0;
-    outline: none;
-    width: 100%;
-    height: 100%;
+.experience-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
 }
 
 .loading {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #000000;
-    z-index: 100;
-    transition: opacity 0.5s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24px;
+  z-index: 1000;
 }
 
-.loading.hidden {
-    opacity: 0;
-    pointer-events: none;
+.loader-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24px;
+  z-index: 1000;
+  transition: opacity 1s ease-in-out;
 }
 
-.loading-bar {
-    width: 100px;
-    height: 2px;
-    background: #ffffff;
-    transform-origin: top left;
-    transform: scaleX(0);
-    transition: transform 0.5s ease;
+.loader-screen.hollow {
+  opacity: 0;
+  pointer-events: none;
 } 

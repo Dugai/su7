@@ -1,7 +1,12 @@
-import Scene from "./components/Scene";
+import React from "react";
+import { Experience } from "./Experience/Experience";
 
-const App = () => {
-  return <Scene backgroundColor={0x333333} />;
+const App: React.FC = () => {
+  return (
+    <div className="app">
+      <Experience />
+    </div>
+  );
 };
 
 export default App;
