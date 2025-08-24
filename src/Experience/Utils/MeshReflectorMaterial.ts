@@ -1,213 +1,131 @@
 import * as THREE from "three";
 
-export interface MeshReflectorMaterialOptions {
-  resolution?: number;
-  ignoreObjects?: THREE.Object3D[];
+export interface MeshReflectorMaterialConfig {
+  resolution: number;
+  ignoreObjects: THREE.Object3D[];
 }
 
-export class MeshReflectorMaterial {
-  private scene: THREE.Scene;
-  private camera: THREE.Camera;
-  private renderer: THREE.WebGLRenderer;
-  private reflectorMesh: THREE.Mesh;
-  private options: MeshReflectorMaterialOptions;
-
-  public _reflectMatrix: THREE.Matrix4;
-  public mipmapFBO: { rt: { texture: THREE.Texture } };
-
-  private renderTarget: THREE.WebGLRenderTarget;
-  private reflectorPlane: THREE.Plane;
-  private normal: THREE.Vector3;
-  private reflectorWorldPosition: THREE.Vector3;
-  private cameraWorldPosition: THREE.Vector3;
-  private rotationMatrix: THREE.Matrix4;
-  private lookAtPosition: THREE.Vector3;
-  private clipPlane: THREE.Vector4;
-  private view: THREE.Vector3;
-  private target: THREE.Vector3;
-  private q: THREE.Vector4;
-  private textureMatrix: THREE.Matrix4;
-  private virtualCamera: THREE.PerspectiveCamera;
+class MeshReflectorMaterial {
+  base: any;
+  parent: THREE.Mesh;
+  ignoreObjects: THREE.Object3D[];
+  _camera: THREE.PerspectiveCamera;
+  reflectPlane: THREE.Plane;
+  _reflectMatrix: THREE.Matrix4;
+  _renderTexture: any;
+  mipmapper: any;
+  mirrorFBO: THREE.WebGLRenderTarget;
+  mipmapFBO: any;
 
   constructor(
-    base: any, // Experience base
-    mesh: THREE.Mesh,
-    options: MeshReflectorMaterialOptions = {}
+    base: any,
+    parent: THREE.Mesh,
+    config: Partial<MeshReflectorMaterialConfig> = {}
   ) {
-    this.scene = base.scene;
-    this.camera = base.camera;
-    this.renderer = base.renderer;
-    this.reflectorMesh = mesh;
-    this.options = {
-      resolution: 1024,
-      ...options,
+    this.base = base;
+    this.parent = parent;
+
+    let { resolution = 256, ignoreObjects = [] } = config;
+
+    this.ignoreObjects = ignoreObjects;
+
+    this._camera = new THREE.PerspectiveCamera();
+    this.reflectPlane = new THREE.Plane();
+    this._reflectMatrix = new THREE.Matrix4();
+    this._renderTexture = {
+      rt: new THREE.WebGLRenderTarget(resolution, resolution, {
+        type: THREE.UnsignedByteType,
+      })
     };
 
-    // Initialize matrices and vectors
-    this._reflectMatrix = new THREE.Matrix4();
-    this.renderTarget = new THREE.WebGLRenderTarget(
-      this.options.resolution!,
-      this.options.resolution!,
-      {
-        type: THREE.HalfFloatType,
-        format: THREE.RGBAFormat,
-        generateMipmaps: true,
-        minFilter: THREE.LinearMipmapLinearFilter,
-        magFilter: THREE.LinearFilter,
-      }
-    );
-
-    // Create mipmap FBO structure for compatibility
+    this.mipmapper = { update: () => {} }; // 模拟mipmapper
+    const mirrorFBO = this._renderTexture.rt;
+    this.mirrorFBO = mirrorFBO;
     this.mipmapFBO = {
       rt: {
-        texture: this.renderTarget.texture,
-      },
+        texture: this._renderTexture.rt.texture
+      }
     };
-
-    this.reflectorPlane = new THREE.Plane();
-    this.normal = new THREE.Vector3();
-    this.reflectorWorldPosition = new THREE.Vector3();
-    this.cameraWorldPosition = new THREE.Vector3();
-    this.rotationMatrix = new THREE.Matrix4();
-    this.lookAtPosition = new THREE.Vector3(0, 0, -1);
-    this.clipPlane = new THREE.Vector4();
-    this.view = new THREE.Vector3();
-    this.target = new THREE.Vector3();
-    this.q = new THREE.Vector4();
-    this.textureMatrix = new THREE.Matrix4();
-    this.virtualCamera = new THREE.PerspectiveCamera();
-
-    this.updateReflectionMatrix();
   }
 
-  private updateReflectionMatrix() {
-    this.reflectorWorldPosition.setFromMatrixPosition(
-      this.reflectorMesh.matrixWorld
-    );
-    this.cameraWorldPosition.setFromMatrixPosition(this.camera.matrixWorld);
+  update(): void {
+    this.beforeRender();
 
-    this.rotationMatrix.extractRotation(this.reflectorMesh.matrixWorld);
-
-    this.normal.set(0, 0, 1);
-    this.normal.applyMatrix4(this.rotationMatrix);
-
-    this.view.subVectors(this.reflectorWorldPosition, this.cameraWorldPosition);
-
-    // Avoid rendering when reflector is facing away
-    if (this.view.dot(this.normal) > 0) return;
-
-    this.view.reflect(this.normal).negate();
-    this.view.add(this.reflectorWorldPosition);
-
-    this.rotationMatrix.extractRotation(this.camera.matrixWorld);
-
-    this.lookAtPosition.set(0, 0, -1);
-    this.lookAtPosition.applyMatrix4(this.rotationMatrix);
-    this.lookAtPosition.add(this.cameraWorldPosition);
-
-    this.target.subVectors(this.reflectorWorldPosition, this.lookAtPosition);
-    this.target.reflect(this.normal).negate();
-    this.target.add(this.reflectorWorldPosition);
-
-    this.virtualCamera.position.copy(this.view);
-    this.virtualCamera.up.set(0, 1, 0);
-    this.virtualCamera.up.applyMatrix4(this.rotationMatrix);
-    this.virtualCamera.up.reflect(this.normal);
-    this.virtualCamera.lookAt(this.target);
-
-    this.virtualCamera.far = (this.camera as THREE.PerspectiveCamera).far;
-    this.virtualCamera.updateMatrixWorld();
-    this.virtualCamera.projectionMatrix.copy(
-      (this.camera as THREE.PerspectiveCamera).projectionMatrix
-    );
-
-    // Update the texture matrix
-    this.textureMatrix.set(
-      0.5,
-      0.0,
-      0.0,
-      0.5,
-      0.0,
-      0.5,
-      0.0,
-      0.5,
-      0.0,
-      0.0,
-      0.5,
-      0.5,
-      0.0,
-      0.0,
-      0.0,
-      1.0
-    );
-    this.textureMatrix.multiply(this.virtualCamera.projectionMatrix);
-    this.textureMatrix.multiply(this.virtualCamera.matrixWorldInverse);
-
-    // Update reflect matrix
-    this._reflectMatrix.copy(this.textureMatrix);
-
-    // Update the reflection plane
-    this.reflectorPlane.setFromNormalAndCoplanarPoint(
-      this.normal,
-      this.reflectorWorldPosition
-    );
-    this.reflectorPlane.applyMatrix4(this.virtualCamera.matrixWorldInverse);
-
-    this.clipPlane.set(
-      this.reflectorPlane.normal.x,
-      this.reflectorPlane.normal.y,
-      this.reflectorPlane.normal.z,
-      this.reflectorPlane.constant
-    );
-
-    const projectionMatrix = this.virtualCamera.projectionMatrix;
-
-    this.q.x =
-      (Math.sign(this.clipPlane.x) + projectionMatrix.elements[8]) /
-      projectionMatrix.elements[0];
-    this.q.y =
-      (Math.sign(this.clipPlane.y) + projectionMatrix.elements[9]) /
-      projectionMatrix.elements[5];
-    this.q.z = -1.0;
-    this.q.w =
-      (1.0 + projectionMatrix.elements[10]) / projectionMatrix.elements[14];
-
-    // Calculate the scaled plane vector
-    this.clipPlane.multiplyScalar(2.0 / this.clipPlane.dot(this.q));
-
-    // Replacing the third row of the projection matrix
-    projectionMatrix.elements[2] = this.clipPlane.x;
-    projectionMatrix.elements[6] = this.clipPlane.y;
-    projectionMatrix.elements[10] = this.clipPlane.z + 1.0;
-    projectionMatrix.elements[14] = this.clipPlane.w;
+    // 模拟mipmap更新
+    this.mipmapper.update();
   }
 
-  public renderReflection() {
-    const currentRenderTarget = this.renderer.getRenderTarget();
+  beforeRender() {
+    this.reflectPlane.set(new THREE.Vector3(0, 1, 0), 0);
+    this.reflectPlane.applyMatrix4(this.parent.matrixWorld);
+    // @ts-ignore
+    this._camera.copy(this.base.camera);
+    const r = new THREE.Vector3(0, 0, 1).clone().negate();
+    const o = this.base.camera.getWorldPosition(new THREE.Vector3());
+    r.reflect(this.reflectPlane.normal);
+    const p = new THREE.Vector3();
+    this.reflectPlane.projectPoint(o, p);
+    const y = p.clone();
+    y.sub(o), y.add(p), this._camera.position.copy(y);
+    const d = new THREE.Vector3(0, 0, -1);
+    d.applyQuaternion(
+      this.base.camera.getWorldQuaternion(new THREE.Quaternion())
+    );
+    d.add(o);
+    const E = new THREE.Vector3();
+    this.parent.getWorldPosition(E);
+    E.sub(d);
+    E.reflect(this.reflectPlane.normal).negate();
+    E.add(this.parent.getWorldPosition(new THREE.Vector3()));
+    this._camera.up.set(0, 1, 0);
+    this._camera.applyQuaternion(
+      this.base.camera.getWorldQuaternion(new THREE.Quaternion())
+    );
+    this._camera.up.reflect(this.reflectPlane.normal);
+    this._camera.lookAt(E);
+    this._camera.updateMatrixWorld();
+    const L = new THREE.Matrix4();
+    L.set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
+    L.multiply(this._camera.projectionMatrix);
+    L.multiply(this._camera.matrixWorldInverse);
+    this._reflectMatrix.copy(L);
+    this.reflectPlane.applyMatrix4(this._camera.matrixWorldInverse);
+    const k = new THREE.Vector4(
+      this.reflectPlane.normal.x,
+      this.reflectPlane.normal.y,
+      this.reflectPlane.normal.z,
+      this.reflectPlane.constant
+    );
+    const X = this._camera.projectionMatrix;
+    const $ = new THREE.Vector4();
+    $.x = (Math.sign(k.x) + X.elements[8]) / X.elements[0];
+    $.y = (Math.sign(k.y) + X.elements[9]) / X.elements[5];
+    $.z = -1;
+    $.w = (1 + X.elements[10]) / X.elements[14];
+    k.multiplyScalar(2 / k.dot($));
+    X.elements[2] = k.x;
+    X.elements[6] = k.y;
+    X.elements[10] = k.z + 1;
+    X.elements[14] = k.w;
+    const Z = this.base.renderer.getRenderTarget();
+    this.base.renderer.setRenderTarget(this._renderTexture.rt);
+    this.base.renderer.state.buffers.depth.setMask(true);
+    this.base.renderer.autoClear === false && this.base.renderer.clear();
+    this.ignoreObjects.forEach((be) => (be.visible = false));
+    this.base.renderer.render(this.base.scene, this._camera);
+    this.ignoreObjects.forEach((be) => (be.visible = true));
+    this.base.renderer.setRenderTarget(Z);
+  }
 
-    // Hide ignored objects
-    const originalVisibility: boolean[] = [];
-    if (this.options.ignoreObjects) {
-      this.options.ignoreObjects.forEach((obj, index) => {
-        originalVisibility[index] = obj.visible;
-        obj.visible = false;
-      });
+  dispose(): void {
+    // 清理渲染目标
+    if (this._renderTexture && this._renderTexture.rt) {
+      this._renderTexture.rt.dispose();
     }
-
-    // Render the reflection
-    this.renderer.setRenderTarget(this.renderTarget);
-    this.renderer.render(this.scene, this.virtualCamera);
-    this.renderer.setRenderTarget(currentRenderTarget);
-
-    // Restore visibility
-    if (this.options.ignoreObjects) {
-      this.options.ignoreObjects.forEach((obj, index) => {
-        obj.visible = originalVisibility[index];
-      });
+    if (this.mirrorFBO) {
+      this.mirrorFBO.dispose();
     }
-  }
-
-  public dispose() {
-    this.renderTarget.dispose();
   }
 }
+
+export { MeshReflectorMaterial };

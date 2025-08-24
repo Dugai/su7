@@ -1,8 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import glsl from "vite-plugin-glsl";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), glsl()],
   server: {
     host: true,
   },
@@ -24,6 +25,6 @@ export default defineConfig({
         "three/examples/jsm/controls/OrbitControls.js",
     },
   },
-  assetsInclude: ["**/*.gltf", "**/*.glb", "**/*.fbx", "**/*.hdr"],
+  assetsInclude: ["**/*.gltf", "**/*.glb", "**/*.fbx", "**/*.hdr", "**/*.glsl"],
   publicDir: "public",
 });

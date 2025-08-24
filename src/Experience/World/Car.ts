@@ -61,7 +61,10 @@ export class Car {
     if (this.modelParts.length === 0) return;
 
     // Based on the original code, body is at index 2
-    const body = this.modelParts[2] as THREE.Mesh;
+    const body = this.modelParts[1] as THREE.Mesh;
+
+    console.log(this.modelParts, 'model parts')
+
     if (body && body.material) {
       const bodyMat = body.material as THREE.MeshStandardMaterial;
       this.bodyMaterial = bodyMat;

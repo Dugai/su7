@@ -32,8 +32,8 @@ export const useAssets = () => {
         case "gltfModel":
           const gltf = await gltfLoader.loadAsync(resource.path);
           return gltf;
-        case "fbxModel":
-          return await fbxLoader.loadAsync(resource.path);
+        // case "fbxModel":
+        //   return await fbxLoader.loadAsync(resource.path);
         case "hdrTexture":
           return await rgbeLoader.loadAsync(resource.path);
         case "audio":

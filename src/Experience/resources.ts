@@ -5,11 +5,11 @@ export interface ResourceItem {
 }
 
 export const resources: ResourceItem[] = [
-  {
-    name: "bgm",
-    type: "audio",
-    path: "/audio/bgm.mp3",
-  },
+  // {
+  //   name: "bgm",
+  //   type: "audio",
+  //   path: "/audio/bgm.mp3",
+  // },
   {
     name: "sm_car",
     type: "gltfModel",
@@ -24,11 +24,6 @@ export const resources: ResourceItem[] = [
     name: "sm_speedup",
     type: "gltfModel",
     path: "/mesh/sm_speedup.gltf",
-  },
-  {
-    name: "t_car_body_AO",
-    type: "texture",
-    path: "/texture/t_car_body_AO.raw.jpg",
   },
   {
     name: "t_startroom_ao",

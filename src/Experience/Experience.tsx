@@ -25,9 +25,49 @@ export const Experience: React.FC<ExperienceProps> = ({ className }) => {
   const raycasterRef = useRef<THREE.Raycaster | null>(null);
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const [isEntered, setIsEntered] = useState(false);
+  
+  // 添加GSAP动画的引用
+  const cameraAnimationRef = useRef<gsap.core.Tween | null>(null);
+  const targetPositionRef = useRef<THREE.Vector3>(new THREE.Vector3());
 
   const params = useParams();
   const { assets, isLoading } = useAssets();
+
+  // 添加相机位置动画函数
+  const animateCameraTo = (
+    targetPosition: THREE.Vector3, 
+    duration: number = 2, 
+    ease: string = "power2.inOut"
+  ) => {
+    const camera = cameraRef.current;
+    if (!camera) return;
+
+    // 停止之前的动画
+    if (cameraAnimationRef.current) {
+      cameraAnimationRef.current.kill();
+    }
+
+    // 创建新的动画
+    cameraAnimationRef.current = gsap.to(camera.position, {
+      x: targetPosition.x,
+      y: targetPosition.y,
+      z: targetPosition.z,
+      duration,
+      ease,
+      onUpdate: () => {
+        // 在动画过程中禁用控制器
+        if (controlsRef.current) {
+          controlsRef.current.enabled = false;
+        }
+      },
+      onComplete: () => {
+        // 动画完成后重新启用控制器
+        if (controlsRef.current && !params.isCameraMoving) {
+          controlsRef.current.enabled = true;
+        }
+      }
+    });
+  };
 
   useEffect(() => {
     if (!containerRef.current || isLoading) return;
@@ -51,6 +91,9 @@ export const Experience: React.FC<ExperienceProps> = ({ className }) => {
     );
     camera.lookAt(0, 0.8, 0);
     cameraRef.current = camera;
+
+    // 初始化目标位置
+    targetPositionRef.current.copy(camera.position);
 
     // Initialize renderer
     const renderer = new THREE.WebGLRenderer({
@@ -86,14 +129,6 @@ export const Experience: React.FC<ExperienceProps> = ({ className }) => {
     const post = new Postprocessing(scene, camera, renderer);
     postRef.current = post;
 
-    // Initialize background music
-    const bgm = new Howl({
-      src: ["/audio/bgm.mp3"],
-      loop: true,
-      volume: 0.5,
-    });
-    bgmRef.current = bgm;
-
     // Mouse interaction
     const handleMouseMove = (event: MouseEvent) => {
       mouseRef.current.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -122,19 +157,29 @@ export const Experience: React.FC<ExperienceProps> = ({ className }) => {
     window.addEventListener("click", handleClick);
 
     // Animation loop
-    const animate = () => {
-      frameIdRef.current = requestAnimationFrame(animate);
+    const animate = (time: number) => {
+      // 检查相机位置是否需要更新
+      const newTargetPosition = new THREE.Vector3(
+        params.cameraPos.x,
+        params.cameraPos.y,
+        params.cameraPos.z
+      );
 
-      // Update camera movement
-      if (params.isCameraMoving) {
-        controls.enabled = false;
-        camera.position.set(
-          params.cameraPos.x,
-          params.cameraPos.y,
-          params.cameraPos.z
-        );
-      } else {
+      // 如果目标位置发生变化，启动动画
+      if (!targetPositionRef.current.equals(newTargetPosition)) {
+        targetPositionRef.current.copy(newTargetPosition);
+        
+        if (params.isCameraMoving) {
+          // 使用GSAP动画移动相机
+          animateCameraTo(newTargetPosition, 1.5, "power2.inOut");
+        }
+      }
+
+      // 只有在非动画状态下才启用控制器
+      if (!params.isCameraMoving && !cameraAnimationRef.current?.isActive()) {
         controls.enabled = true;
+      } else {
+        controls.enabled = false;
       }
 
       // Update world
@@ -145,9 +190,10 @@ export const Experience: React.FC<ExperienceProps> = ({ className }) => {
 
       // Render
       post.render();
+      frameIdRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    animate(0);
 
     // Handle resize
     const handleResize = () => {
@@ -168,11 +214,20 @@ export const Experience: React.FC<ExperienceProps> = ({ className }) => {
 
     window.addEventListener("resize", handleResize);
 
-    // Start the experience
+    // Start the experience with camera animation
     setTimeout(() => {
       world.enter();
       setIsEntered(true);
-      bgm.play();
+      
+      // 初始相机动画
+      const initialPosition = new THREE.Vector3(
+        params.cameraPos.x,
+        params.cameraPos.y,
+        params.cameraPos.z
+      );
+      animateCameraTo(initialPosition, 2, "power2.out");
+      
+      // bgm.play();
     }, 1000);
 
     // Cleanup
@@ -182,15 +237,36 @@ export const Experience: React.FC<ExperienceProps> = ({ className }) => {
       window.removeEventListener("click", handleClick);
       cancelAnimationFrame(frameIdRef.current);
 
+      // 清理GSAP动画
+      if (cameraAnimationRef.current) {
+        cameraAnimationRef.current.kill();
+      }
+
       if (containerRef.current && renderer.domElement) {
         containerRef.current.removeChild(renderer.domElement);
       }
 
       world.dispose();
       renderer.dispose();
-      bgm.stop();
+      // bgm.stop();
     };
   }, [assets, isLoading, params]);
+
+  // 暴露相机动画函数给外部使用
+  useEffect(() => {
+    // 可以在这里监听params的变化来触发相机动画
+    if (cameraRef.current && params.cameraPos) {
+      const newPosition = new THREE.Vector3(
+        params.cameraPos.x,
+        params.cameraPos.y,
+        params.cameraPos.z
+      );
+      
+      if (!targetPositionRef.current.equals(newPosition)) {
+        animateCameraTo(newPosition, 1.5, "power2.inOut");
+      }
+    }
+  }, [params.cameraPos]);
 
   if (isLoading) {
     return (

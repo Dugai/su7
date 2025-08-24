@@ -270,7 +270,7 @@ export class StartRoom {
 
     // Update reflection
     if (this.reflectorMaterial) {
-      this.reflectorMaterial.renderReflection();
+      this.reflectorMaterial.update();
     }
   }
 
