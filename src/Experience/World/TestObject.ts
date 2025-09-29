@@ -1,45 +1,44 @@
 import * as kokomi from "kokomi.js";
 import * as THREE from "three";
 
-import type ExperienceVanilla from "../ExperienceVanilla";
+import type Experience from "../Experience";
 
 import testObjectVertexShader from "../Shaders/TestObject/vert.glsl";
 import testObjectFragmentShader from "../Shaders/TestObject/frag.glsl";
 
 export default class TestObject extends kokomi.Component {
-  declare base: ExperienceVanilla;
-  uj: kokomi.UniformInjector;
-  geometry: THREE.PlaneGeometry;
-  material: THREE.ShaderMaterial;
-  mesh: THREE.Mesh;
-
-  constructor(base: ExperienceVanilla) {
+  declare base: Experience;
+  testObject!: kokomi.CustomMesh;
+  
+  constructor(base: Experience) {
     super(base);
 
-    const uj = new kokomi.UniformInjector(this.base);
-    this.uj = uj;
+    this.create();
+  }
 
-    const geometry = new THREE.PlaneGeometry();
-    this.geometry = geometry;
-
-    const material = new THREE.ShaderMaterial({
+  create() {
+    const testObjectGeometry = new THREE.SphereGeometry(1, 32, 32);
+    const testObjectMaterial = new THREE.ShaderMaterial({
       vertexShader: testObjectVertexShader,
       fragmentShader: testObjectFragmentShader,
+      side: THREE.DoubleSide,
       uniforms: {
-        ...uj.shadertoyUniforms,
-      },
+        uTime: { value: 0 },
+        uMouse: { value: new THREE.Vector2(0, 0) },
+        uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+      }
     });
-    this.material = material;
 
-    const mesh = new THREE.Mesh(geometry, material);
-    this.mesh = mesh;
+    this.testObject = new kokomi.CustomMesh(this.base, testObjectGeometry, testObjectMaterial);
+    this.testObject.addExisting();
   }
 
-  addExisting() {
-    this.container.add(this.mesh);
-  }
-
-  update(): void {
-    this.uj.injectShadertoyUniforms(this.material.uniforms);
+  update() {
+    if (this.testObject) {
+      this.testObject.material.uniforms.uTime.value = this.base.clock.elapsedTime;
+    }
   }
 }
+
+
+

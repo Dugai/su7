@@ -1,63 +1,118 @@
-* {
+body {
   margin: 0;
   padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  background: black;
+}
+
+* {
   box-sizing: border-box;
 }
 
-html,
-body,
 #root {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#sketch {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
 }
 
-body {
-  background: #000;
-  font-family: Arial, sans-serif;
-}
-
-.experience-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  touch-action: none;
-}
-
-.loading {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 24px;
-  z-index: 1000;
-}
-
+/* 加载屏幕样式 */
 .loader-screen {
   position: fixed;
+  z-index: 5;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: #000;
+  transition: opacity 0.3s ease-in-out;
+  background: black;
   display: flex;
-  align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 24px;
-  z-index: 1000;
-  transition: opacity 1s ease-in-out;
+  align-items: center;
 }
 
 .loader-screen.hollow {
   opacity: 0;
   pointer-events: none;
-} 
+}
+
+.loading-container {
+  text-align: center;
+}
+
+.loading {
+  color: white;
+  font-size: 1.875rem;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+}
+
+.loading span {
+  display: inline-block;
+  animation: blur 1.5s calc(var(--i) / 5 * 1s) alternate infinite;
+}
+
+@keyframes blur {
+  0% {
+    filter: blur(0px);
+    opacity: 1;
+  }
+  100% {
+    filter: blur(2px);
+    opacity: 0.7;
+  }
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .loading {
+    font-size: 1.5rem;
+  }
+  
+  body {
+    touch-action: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+}
+
+/* 防止拖拽 */
+canvas {
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 滚动条隐藏 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* 确保全屏 */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}

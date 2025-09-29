@@ -2,65 +2,70 @@ import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
 
-export class Postprocessing {
-  private scene: THREE.Scene;
-  private camera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGLRenderer;
-  private composer: EffectComposer;
-  private bloomPass: UnrealBloomPass;
+import type Experience from "./Experience";
 
-  constructor(
-    scene: THREE.Scene,
-    camera: THREE.PerspectiveCamera,
-    renderer: THREE.WebGLRenderer
-  ) {
-    this.scene = scene;
-    this.camera = camera;
-    this.renderer = renderer;
-
-    // Initialize post-processing
-    this.composer = new EffectComposer(this.renderer);
-
-    // Add render pass
-    const renderPass = new RenderPass(this.scene, this.camera);
+export default class Postprocessing {
+  experience: Experience;
+  composer: EffectComposer;
+  bloomPass: UnrealBloomPass;
+  
+  constructor(experience: Experience) {
+    this.experience = experience;
+    
+    console.log('✨ 初始化后处理系统...');
+    
+    // 创建EffectComposer
+    this.composer = new EffectComposer(this.experience.renderer);
+    
+    // 添加渲染通道
+    const renderPass = new RenderPass(this.experience.scene, this.experience.camera);
     this.composer.addPass(renderPass);
-
-    // Add bloom pass
+    
+    // 添加Bloom效果
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      1.5,
-      0.4,
-      0.85
+      this.experience.params.bloomIntensity, // 强度
+      0.4, // 半径
+      0.85 // 阈值
     );
+    
+    // 设置Bloom参数
+    this.bloomPass.threshold = 0;
+    this.bloomPass.strength = this.experience.params.bloomIntensity;
+    this.bloomPass.radius = 0.4;
+    
     this.composer.addPass(this.bloomPass);
-
-    // Configure renderer
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1;
+    
+    // 添加输出通道
+    const outputPass = new OutputPass();
+    this.composer.addPass(outputPass);
+    
+    console.log('✅ 后处理系统初始化完成');
   }
-
-  public render() {
+  
+  render() {
     this.composer.render();
   }
-
-  public resize() {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    this.composer.setSize(width, height);
-    this.bloomPass.resolution.set(width, height);
+  
+  onResize() {
+    this.composer.setSize(window.innerWidth, window.innerHeight);
   }
-
-  public setBloomIntensity(value: number) {
+  
+  // 设置Bloom强度（对应原始代码中的setIntensity）
+  setIntensity(value: number) {
     this.bloomPass.strength = value;
   }
-
-  public setBloomRadius(value: number) {
-    this.bloomPass.radius = value;
+  
+  // 设置亮度平滑（对应原始代码中的setLuminanceSmoothing）
+  setLuminanceSmoothing(value: number) {
+    // UnrealBloomPass没有直接的luminanceSmoothing参数
+    // 我们通过调整阈值来模拟类似效果
+    this.bloomPass.threshold = Math.max(0, 1 - value);
   }
-
-  public setBloomThreshold(value: number) {
-    this.bloomPass.threshold = value;
+  
+  dispose() {
+    this.composer.dispose();
   }
 }

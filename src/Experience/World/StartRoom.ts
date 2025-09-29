@@ -1,295 +1,194 @@
 import * as THREE from "three";
-import { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
-import { CustomShaderMaterial } from "../Utils/CustomShaderMaterial";
+import type Experience from "../Experience";
 import { MeshReflectorMaterial } from "../Utils/MeshReflectorMaterial";
 
-export class StartRoom {
-  private scene: THREE.Scene;
-  private camera: THREE.Camera;
-  private renderer: THREE.WebGLRenderer;
-  private assets: any;
-  private model: THREE.Group | null = null;
-  private modelParts: THREE.Object3D[] = [];
-  public lightMat: THREE.MeshStandardMaterial | null = null;
-  public customFloorMat: CustomShaderMaterial | null = null;
-  private reflectorMaterial: MeshReflectorMaterial | null = null;
-  private clock: THREE.Clock;
-
-  constructor(
-    scene: THREE.Scene,
-    assets: any,
-    camera?: THREE.Camera,
-    renderer?: THREE.WebGLRenderer
-  ) {
-    this.scene = scene;
-    this.assets = assets;
-    this.camera = camera || new THREE.PerspectiveCamera();
-    this.renderer = renderer || new THREE.WebGLRenderer();
-    this.clock = new THREE.Clock();
+export default class StartRoom {
+  experience: Experience;
+  model: any; // GLTF模型
+  modelParts: THREE.Object3D[] = [];
+  
+  lightMat: THREE.MeshStandardMaterial | null = null;
+  floorMesh: THREE.Mesh | null = null;
+  customFloorMat: THREE.ShaderMaterial | THREE.MeshStandardMaterial | null = null;
+  reflectorMaterial: MeshReflectorMaterial | null = null;
+  
+  constructor(experience: Experience, model: any) {
+    this.experience = experience;
+    this.model = model;
+    
+    console.log('🏢 初始化展厅组件...');
+    
     this.init();
   }
 
   private init() {
-    // Load start room model
-    const startRoomModel = this.assets["sm_startroom"] as GLTF;
-    if (startRoomModel?.scene) {
-      this.model = startRoomModel.scene;
-      if (this.model) {
-        this.model.scale.set(1, 1, 1);
-        this.model.position.set(0, 0, 0);
-        this.scene.add(this.model);
-
-        // Flatten model hierarchy
-        this.modelParts = this.flatModel(this.model);
-        this.printModel(this.modelParts);
-        this.setupMaterials();
-      }
-    }
+    // 添加模型到场景
+    this.experience.scene.add(this.model.scene);
+    
+    // 扁平化模型层级
+    this.flattenModel(this.model.scene);
+    
+    // 处理模型材质
+    this.handleModel();
+    
+    console.log(`✅ 展厅初始化完成，共 ${this.modelParts.length} 个部件`);
   }
-
-  private flatModel(model: THREE.Object3D): THREE.Object3D[] {
-    const parts: THREE.Object3D[] = [];
-
-    model.traverse((child) => {
-      if (child instanceof THREE.Mesh || child instanceof THREE.Group) {
-        parts.push(child);
+  
+  private flattenModel(object: THREE.Object3D) {
+    object.traverse((child) => {
+      if (child.isMesh || child.isGroup) {
+        this.modelParts.push(child);
       }
     });
-
-    return parts;
   }
-
-  private printModel(parts: THREE.Object3D[]) {
-    console.log("StartRoom model parts:");
-    parts.forEach((part, index) => {
-      console.log(`[${index}] ${part.name} - ${part.type}`);
-    });
-  }
-
-  private setupMaterials() {
-    if (this.modelParts.length === 0) return;
-
-    // Based on original code: light001 is at index 1, ReflecFloor is at index 2
-    const light001 = this.modelParts[1] as THREE.Mesh;
-    const ReflecFloor = this.modelParts[2] as THREE.Mesh;
-
-    // Setup light material
-    if (light001 && light001.material) {
-      const lightMat = light001.material as THREE.MeshStandardMaterial;
-      this.lightMat = lightMat;
-      lightMat.emissive = new THREE.Color("white");
-      lightMat.emissiveIntensity = 1;
-      lightMat.toneMapped = false;
-      lightMat.transparent = true;
-      lightMat.alphaTest = 0.1;
+  
+  private handleModel() {
+    console.log('🎨 处理展厅材质...');
+    
+    // 处理光源材质（通常是索引1的部件）
+    if (this.modelParts.length > 1) {
+      const light001 = this.modelParts[1] as THREE.Mesh;
+      if (light001 && light001.material) {
+        this.lightMat = light001.material as THREE.MeshStandardMaterial;
+        
+        // 设置发光材质
+        this.lightMat.emissive = new THREE.Color("white");
+        this.lightMat.emissiveIntensity = 1;
+        this.lightMat.toneMapped = false;
+        this.lightMat.transparent = true;
+        this.lightMat.alphaTest = 0.1;
+        
+        console.log('💡 光源材质已设置');
+      }
     }
-
-    // Setup floor material
-    if (ReflecFloor && ReflecFloor.material) {
-      const floorMat = ReflecFloor.material as THREE.MeshPhysicalMaterial;
-
-      // Apply textures
-      floorMat.aoMap = this.assets["t_startroom_ao"];
-      floorMat.lightMap = this.assets["t_startroom_light"];
-      floorMat.normalMap = this.assets["t_floor_normal"];
-      floorMat.roughnessMap = this.assets["t_floor_roughness"];
+    
+    // 处理反射地面（通常是索引2的部件）
+    if (this.modelParts.length > 2) {
+      this.floorMesh = this.modelParts[2] as THREE.Mesh;
+      if (this.floorMesh && this.floorMesh.material) {
+        const floorMat = this.floorMesh.material as THREE.MeshPhysicalMaterial;
+        
+        // 应用纹理
+        const aoTexture = this.experience.am?.getTexture("ut_startroom_ao");
+        const lightTexture = this.experience.am?.getTexture("ut_startroom_light");
+        const normalTexture = this.experience.am?.getTexture("ut_floor_normal");
+        const roughnessTexture = this.experience.am?.getTexture("ut_floor_roughness");
+        
+        if (aoTexture) floorMat.aoMap = aoTexture;
+        if (lightTexture) floorMat.lightMap = lightTexture;
+        if (normalTexture) floorMat.normalMap = normalTexture;
+        if (roughnessTexture) floorMat.roughnessMap = roughnessTexture;
+        
       floorMat.envMapIntensity = 0;
 
-      // Create reflection material
-      this.reflectorMaterial = new MeshReflectorMaterial(
-        { scene: this.scene, camera: this.camera, renderer: this.renderer },
-        ReflecFloor,
-        {
-          resolution: 1024,
-          ignoreObjects: [light001, ReflecFloor],
-        }
-      );
-
-      // Create custom shader material
-      this.customFloorMat = new CustomShaderMaterial({
-        baseMaterial: floorMat,
-        vertexShader: `
-          uniform float iTime;
-          uniform vec2 iResolution;
-          uniform vec2 iMouse;
-          
-          varying vec2 vUv_;
-          varying vec4 vWorldPosition;
-          
-          void main() {
-            vec3 p = position;
-            
-            // Custom vertex transformation
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-            
-            vUv_ = uv;
-            vWorldPosition = modelMatrix * vec4(p, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform float iTime;
-          uniform vec2 iResolution;
-          uniform vec2 iMouse;
-          
-          varying vec2 vUv_;
-          varying vec4 vWorldPosition;
-          
-          uniform vec3 uColor;
-          uniform float uSpeed;
-          uniform mat4 uReflectMatrix;
-          uniform sampler2D uReflectTexture;
-          uniform float uReflectIntensity;
-          uniform vec2 uMipmapTextureSize;
-          
-          // Textures from base material
-          uniform sampler2D normalMap;
-          uniform sampler2D roughnessMap;
-          uniform sampler2D aoMap;
-          uniform sampler2D lightMap;
-          
-          // Simple fresnel function
-          vec3 fresnel(vec3 F0, vec3 normal, vec3 viewDir) {
-            float cosTheta = max(dot(normal, viewDir), 0.0);
-            return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-          }
-          
-          void main() {
-            vec2 p = vUv_;
-            
-            // Sample surface normal with animation
-            vec2 surfaceNormalUv = vWorldPosition.xz;
-            surfaceNormalUv.x += iTime * uSpeed;
-            vec3 surfaceNormal = texture2D(normalMap, surfaceNormalUv).rgb * 2.0 - 1.0;
-            surfaceNormal = normalize(surfaceNormal);
-            
-            // Sample roughness
-            vec2 roughnessUv = vWorldPosition.xz;
-            roughnessUv.x += iTime * uSpeed;
-            float roughnessValue = texture2D(roughnessMap, roughnessUv).r;
-            roughnessValue = roughnessValue * (1.7 - 0.7 * roughnessValue);
-            roughnessValue *= 4.0;
-            
-            // Calculate reflection
-            vec4 reflectPoint = uReflectMatrix * vWorldPosition;
-            reflectPoint = reflectPoint / reflectPoint.w;
-            
-            vec3 viewDir = normalize(cameraPosition - vWorldPosition.xyz);
-            float d = length(cameraPosition - vWorldPosition.xyz);
-            vec2 distortion = surfaceNormal.xz * (0.001 + 1.0 / d);
-            
-            vec2 finalUv = reflectPoint.xy + distortion;
-            vec3 reflectionSample = texture2D(uReflectTexture, finalUv).rgb;
-            reflectionSample *= uReflectIntensity;
-            
-            // Base color
-            vec3 col = uColor;
-            col *= 3.0;
-            
-            // Apply fresnel
-            vec3 fres = fresnel(vec3(0.04), surfaceNormal, viewDir);
-            col = mix(col, reflectionSample, fres.r);
-            
-            // Apply lighting
-            vec3 lightColor = texture2D(lightMap, vUv_).rgb;
-            col += lightColor * 0.5;
-            
-            // Apply AO
-            float ao = texture2D(aoMap, vUv_).r;
-            col *= ao;
-            
-            gl_FragColor = vec4(col, 1.0);
-          }
-        `,
-        uniforms: {
-          iTime: { value: 0 },
-          iResolution: {
-            value: new THREE.Vector2(window.innerWidth, window.innerHeight),
-          },
-          iMouse: { value: new THREE.Vector2() },
-          uColor: { value: new THREE.Color("#ffffff") },
-          uSpeed: { value: 0 },
-          uReflectMatrix: { value: this.reflectorMaterial._reflectMatrix },
-          uReflectTexture: {
-            value: this.reflectorMaterial.mipmapFBO.rt.texture,
-          },
-          uReflectIntensity: { value: 25 },
-          uMipmapTextureSize: {
-            value: new THREE.Vector2(window.innerWidth, window.innerHeight),
-          },
-        },
+        // 创建自定义反射地面材质
+        this.createCustomFloorMaterial(floorMat);
+        
+        console.log('🏢 地面材质已设置');
+      }
+    }
+  }
+  
+  private createCustomFloorMaterial(baseMaterial: THREE.MeshPhysicalMaterial) {
+    console.log('🪞 创建简化反射地面材质...');
+    
+    // 暂时使用简化版本，避免复杂的反射器导致的问题
+    if (this.floorMesh) {
+      // 创建简化的PBR材质，具有高反射性
+      const simplifiedMaterial = new THREE.MeshStandardMaterial({
+        map: baseMaterial.map,
+        normalMap: baseMaterial.normalMap,
+        roughnessMap: baseMaterial.roughnessMap,
+        aoMap: baseMaterial.aoMap,
+        lightMap: baseMaterial.lightMap,
+        
+        // 高反射设置
+        metalness: 0.1,
+        roughness: 0.1,
+        envMapIntensity: 2.0,
+        
+        // 动态颜色（将在update中修改）
+        color: new THREE.Color("#ffffff"),
       });
-
-      // Apply custom material to floor
-      ReflecFloor.material = this.customFloorMat;
-
-      // Handle window resize
-      window.addEventListener("resize", () => {
-        if (this.customFloorMat) {
-          this.customFloorMat.uniforms.uMipmapTextureSize.value =
-            new THREE.Vector2(window.innerWidth, window.innerHeight);
-        }
-      });
+      
+      this.customFloorMat = simplifiedMaterial as any; // 类型兼容
+      this.floorMesh.material = simplifiedMaterial;
+      
+      console.log('✅ 简化反射地面材质创建完成');
     }
   }
-
-  public setLightIntensity(value: number) {
-    if (this.lightMat) {
-      this.lightMat.emissiveIntensity = value;
-    }
-  }
-
-  public setReflectIntensity(value: number) {
-    if (this.customFloorMat) {
-      this.customFloorMat.uniforms.uReflectIntensity.value = value;
-    }
-  }
-
-  public setFloorColor(color: THREE.Color) {
-    if (this.customFloorMat) {
-      this.customFloorMat.uniforms.uColor.value.copy(color);
-    }
-  }
-
-  public setLightColor(color: THREE.Color) {
-    if (this.lightMat) {
-      this.lightMat.emissive.copy(color);
-    }
-  }
-
-  public setLightOpacity(value: number) {
-    if (this.lightMat) {
-      this.lightMat.opacity = value;
-    }
-  }
-
-  public update() {
-    if (this.customFloorMat) {
-      this.customFloorMat.uniforms.iTime.value = this.clock.getElapsedTime();
-      this.customFloorMat.uniforms.uSpeed.value = 0; // Will be updated by World
-    }
-
-    // Update reflection
+  
+  update(deltaTime: number, elapsedTime: number) {
+    // 更新反射器（如果存在）
     if (this.reflectorMaterial) {
       this.reflectorMaterial.update();
     }
+    
+    // 简化版本不需要特殊的uniform更新
+    // 动态参数通过其他方法设置
   }
-
-  public dispose() {
-    if (this.model) {
-      this.scene.remove(this.model);
-      this.model.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.geometry.dispose();
-          if (Array.isArray(child.material)) {
-            child.material.forEach((material) => material.dispose());
+  
+  // 设置光源强度
+  setLightIntensity(intensity: number) {
+    if (this.lightMat) {
+      this.lightMat.emissiveIntensity = intensity;
+    }
+  }
+  
+  // 设置光源透明度
+  setLightOpacity(opacity: number) {
+    if (this.lightMat) {
+      this.lightMat.opacity = opacity;
+    }
+  }
+  
+  // 设置地面颜色
+  setFloorColor(color: THREE.Color) {
+    if (this.customFloorMat && (this.customFloorMat as any).color) {
+      (this.customFloorMat as any).color.copy(color);
+    }
+  }
+  
+  // 设置反射强度
+  setReflectIntensity(intensity: number) {
+    if (this.customFloorMat && (this.customFloorMat as any).envMapIntensity !== undefined) {
+      (this.customFloorMat as any).envMapIntensity = intensity * 0.1; // 缩放到合理范围
+    }
+  }
+  
+  dispose() {
+    // 从场景中移除
+    if (this.model?.scene) {
+      this.experience.scene.remove(this.model.scene);
+    }
+    
+    // 清理反射器材质
+    if (this.reflectorMaterial) {
+      this.reflectorMaterial.dispose();
+    }
+    
+    // 清理自定义材质
+    if (this.customFloorMat) {
+      this.customFloorMat.dispose();
+    }
+    
+    // 清理其他材质
+    this.modelParts.forEach((part) => {
+      if (part.type === 'Mesh') {
+        const mesh = part as THREE.Mesh;
+        if (mesh.material) {
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach(mat => mat.dispose());
           } else {
-            child.material.dispose();
+            mesh.material.dispose();
+          }
+        }
+        if (mesh.geometry) {
+          mesh.geometry.dispose();
           }
         }
       });
-    }
-    this.lightMat?.dispose();
-    this.customFloorMat?.dispose();
-    this.reflectorMaterial?.dispose();
+    
+    console.log('🗑️ 展厅组件已清理');
   }
 }

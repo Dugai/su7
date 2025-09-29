@@ -1,15 +1,11 @@
-export interface ResourceItem {
-  name: string;
-  type: "audio" | "gltfModel" | "texture" | "hdrTexture" | "fbxModel";
-  path: string;
-}
+import type { ResourceItem } from "./AssetManager";
 
 export const resources: ResourceItem[] = [
-  // {
-  //   name: "bgm",
-  //   type: "audio",
-  //   path: "/audio/bgm.mp3",
-  // },
+  {
+    name: "bgm",
+    type: "audio",
+    path: "/audio/bgm.mp3",
+  },
   {
     name: "sm_car",
     type: "gltfModel",
@@ -26,22 +22,27 @@ export const resources: ResourceItem[] = [
     path: "/mesh/sm_speedup.gltf",
   },
   {
-    name: "t_startroom_ao",
+    name: "ut_car_body_ao",
+    type: "texture",
+    path: "/texture/t_car_body_AO.raw.jpg",
+  },
+  {
+    name: "ut_startroom_ao",
     type: "texture",
     path: "/texture/t_startroom_ao.raw.jpg",
   },
   {
-    name: "t_startroom_light",
+    name: "ut_startroom_light",
     type: "texture",
     path: "/texture/t_startroom_light.raw.jpg",
   },
   {
-    name: "t_floor_normal",
+    name: "ut_floor_normal",
     type: "texture",
     path: "/texture/t_floor_normal.webp",
   },
   {
-    name: "t_floor_roughness",
+    name: "ut_floor_roughness",
     type: "texture",
     path: "/texture/t_floor_roughness.webp",
   },
