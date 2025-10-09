@@ -37,7 +37,7 @@ export default class World {
   constructor(experience: Experience) {
     this.experience = experience;
 
-    console.log("🌍 初始化World系统...");
+    
 
     // 创建GSAP时间线
     this.t1 = gsap.timeline();
@@ -55,7 +55,7 @@ export default class World {
 
   private async init() {
     try {
-      console.log("🏗️ 开始构建World组件...");
+      
 
       // 设置场景背景
       this.experience.scene.background = new THREE.Color("black");
@@ -89,14 +89,14 @@ export default class World {
       // 开始入场动画
       this.enter();
 
-      console.log("✅ World系统初始化完成");
+      
     } catch (error) {
       console.error("❌ World初始化失败:", error);
     }
   }
 
   private async createDynamicEnvironment() {
-    console.log("🌅 创建动态环境...");
+    
 
     const envmap1 = this.experience.am?.createEnvMapFromHDR("ut_env_night");
     const envmap2 = this.experience.am?.createEnvMapFromHDR("ut_env_light");
@@ -111,62 +111,62 @@ export default class World {
       this.experience.scene.environment = this.dynamicEnv.envmap;
       this.dynamicEnv.setWeight(1);
 
-      console.log("✅ 动态环境创建完成");
+      
     } else {
       console.warn("⚠️ HDR环境贴图未找到，跳过动态环境创建");
     }
   }
 
   private createStartRoom() {
-    console.log("🏢 创建展厅...");
+    
 
     const startRoomModel = this.experience.am?.getGLTF("sm_startroom");
     if (startRoomModel) {
       this.startRoom = new StartRoom(this.experience, startRoomModel);
-      console.log("✅ 展厅创建完成");
+      
     } else {
       console.warn("⚠️ 展厅模型未找到，跳过展厅创建");
     }
   }
 
   private createCar() {
-    console.log("🚗 创建汽车...");
+    
 
     const carModel = this.experience.am?.getGLTF("sm_car");
     if (carModel) {
       this.car = new Car(this.experience, carModel);
-      console.log("✅ 汽车创建完成");
+      
     } else {
       console.warn("⚠️ 汽车模型未找到，跳过汽车创建");
     }
   }
 
   private createSpeedup() {
-    console.log("💨 创建速度线特效...");
+    
 
     const speedupModel = this.experience.am?.getGLTF("sm_speedup");
     if (speedupModel) {
       this.speedup = new Speedup(this.experience, speedupModel);
-      console.log("✅ 速度线特效创建完成");
+      
     } else {
       console.warn("⚠️ 速度线模型未找到，跳过速度线创建");
     }
   }
 
   private createFurina() {
-    console.log("👤 创建Furina角色...");
+    
 
     const furinaModel = this.experience.am?.getFBX("driving");
     if (furinaModel) {
       this.furina = new Furina(this.experience, furinaModel);
-      console.log("✅ Furina角色创建完成");
+      
     } else {
       console.warn("⚠️ Furina模型未找到，跳过角色创建");
     }
   }
 
   private createEnvironmentReflection() {
-    console.log("🪞 创建环境反射...");
+    
 
     // 创建立方体渲染目标用于环境反射
     this.environment = new THREE.WebGLCubeRenderTarget(512, {
@@ -175,20 +175,20 @@ export default class World {
       minFilter: THREE.LinearMipmapLinearFilter,
     });
 
-    console.log("✅ 环境反射创建完成");
+    
   }
 
   private createCameraShake() {
-    console.log("📳 创建相机震动...");
+    
 
     this.cameraShake = new CameraShake(this.experience);
     this.cameraShake.setIntensity(0);
 
-    console.log("✅ 相机震动创建完成");
+    
   }
 
   private setupInteractions() {
-    console.log("🖱️ 设置交互...");
+    
 
     if (this.car) {
       // 添加点击事件监听
@@ -218,7 +218,7 @@ export default class World {
         "click",
         onMouseClick
       );
-      console.log("✅ 汽车点击交互已设置");
+      
     }
   }
 
@@ -247,7 +247,7 @@ export default class World {
 
   // 入场动画
   enter() {
-    console.log("🎬 开始入场动画...");
+    
 
     this.experience.params.disableInteract = true;
 
@@ -281,7 +281,7 @@ export default class World {
       onComplete: () => {
         this.experience.params.isCameraMoving = false;
         this.experience.params.disableInteract = false;
-        console.log("🎉 入场动画完成");
+        
       },
     });
 
@@ -349,7 +349,7 @@ export default class World {
 
   // 直接进入（跳过动画）
   enterDirectly() {
-    console.log("⚡ 直接进入场景...");
+    
 
     document.querySelector(".loader-screen")?.classList.add("hollow");
     this.experience.params.isCameraMoving = false;
@@ -362,7 +362,7 @@ export default class World {
       this.dynamicEnv.setWeight(1);
     }
 
-    console.log("✅ 直接进入完成");
+    
   }
 
   // 冲刺模式
@@ -376,7 +376,7 @@ export default class World {
       return;
     }
 
-    console.log("🏃 开始冲刺模式...");
+    
 
     this.experience.params.disableInteract = true;
     this.clearAllTweens();
@@ -518,7 +518,7 @@ export default class World {
       },
     });
 
-    console.log("✅ 冲刺模式启动完成");
+    
   }
 
   // 结束冲刺模式
@@ -527,7 +527,7 @@ export default class World {
       return;
     }
 
-    console.log("🛑 结束冲刺模式...");
+    
 
     this.experience.params.disableInteract = true;
     this.clearAllTweens();
@@ -550,7 +550,7 @@ export default class World {
       this.experience.scene.environment = this.dynamicEnv.envmap;
     }
 
-    console.log("✅ 冲刺模式结束");
+    
   }
 
   dispose() {

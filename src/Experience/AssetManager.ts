@@ -20,7 +20,7 @@ export default class AssetManager {
   private hdrLoader: RGBELoader;
   
   constructor() {
-    console.log('📦 创建资源管理器...');
+    
     
     // 创建加载管理器
     this.loadingManager = new THREE.LoadingManager();
@@ -44,17 +44,16 @@ export default class AssetManager {
     
     this.loadingManager.onStart = (url, itemsLoaded, itemsTotal) => {
       totalCount = itemsTotal;
-      console.log(`📥 开始加载资源: ${itemsLoaded}/${itemsTotal}`);
+      
     };
     
     this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
       const progress = Math.round((itemsLoaded / itemsTotal) * 100);
-      console.log(`📊 加载进度: ${progress}% (${itemsLoaded}/${itemsTotal})`);
-      console.log(`📄 当前文件: ${url}`);
+      
     };
     
     this.loadingManager.onLoad = () => {
-      console.log('✅ 所有资源加载完成！');
+      
     };
     
     this.loadingManager.onError = (url) => {
@@ -63,14 +62,14 @@ export default class AssetManager {
   }
   
   async loadResources(resources: ResourceItem[]): Promise<void> {
-    console.log(`📋 准备加载 ${resources.length} 个资源...`);
+    
     
     const promises = resources.map(resource => this.loadResource(resource));
     
     try {
       await Promise.all(promises);
       this.handleLoadedAssets();
-      console.log('🎉 资源管理器加载完成！');
+      
     } catch (error) {
       console.error('❌ 资源加载过程中出现错误:', error);
       throw error;
@@ -81,7 +80,7 @@ export default class AssetManager {
     return new Promise((resolve, reject) => {
       const { name, type, path } = resource;
       
-      console.log(`🔄 加载 ${type}: ${name} (${path})`);
+      
       
       switch (type) {
         case "gltfModel":
@@ -89,7 +88,7 @@ export default class AssetManager {
             path,
             (gltf) => {
               this.items[name] = gltf;
-              console.log(`✅ GLTF模型加载成功: ${name}`);
+              
               resolve();
             },
             (progress) => {
@@ -107,7 +106,7 @@ export default class AssetManager {
             path,
             (fbx) => {
               this.items[name] = fbx;
-              console.log(`✅ FBX模型加载成功: ${name}`);
+              
               resolve();
             },
             (progress) => {
@@ -125,7 +124,7 @@ export default class AssetManager {
             path,
             (texture) => {
               this.items[name] = texture;
-              console.log(`✅ 纹理加载成功: ${name}`);
+              
               resolve();
             },
             (progress) => {
@@ -143,7 +142,7 @@ export default class AssetManager {
             path,
             (hdrTexture) => {
               this.items[name] = hdrTexture;
-              console.log(`✅ HDR纹理加载成功: ${name}`);
+              
               resolve();
             },
             (progress) => {
@@ -158,7 +157,7 @@ export default class AssetManager {
           
         case "audio":
           // 音频加载使用Howler.js，这里暂时跳过
-          console.log(`⏭️ 跳过音频加载: ${name}`);
+          
           resolve();
           break;
           
@@ -169,7 +168,7 @@ export default class AssetManager {
   }
   
   private handleLoadedAssets() {
-    console.log('🎨 处理加载的资源...');
+    
     
     // 处理纹理设置（参考原始代码中的handleAssets）
     const textureSettings = [
@@ -221,7 +220,7 @@ export default class AssetManager {
       const texture = this.items[name] as THREE.Texture;
       if (texture && texture.isTexture) {
         Object.assign(texture, settings);
-        console.log(`🎨 纹理设置已应用: ${name}`);
+        
       }
     });
     
@@ -230,10 +229,10 @@ export default class AssetManager {
       const decalTexture = this.items["decal"] as THREE.Texture;
       decalTexture.flipY = false;
       decalTexture.colorSpace = THREE.LinearSRGBColorSpace;
-      console.log('🎨 贴花纹理设置已应用');
+      
     }
     
-    console.log('✅ 资源处理完成');
+    
   }
   
   // 获取资源的便捷方法

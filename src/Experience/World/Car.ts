@@ -36,7 +36,7 @@ export default class Car {
   }
 
   private handleModel() {
-    console.log(this.modelParts, "车子的模型部件");
+    
     // 寻找车身
     if (this.modelParts.length > 1) {
       const body = this.modelParts[1] as THREE.Mesh;

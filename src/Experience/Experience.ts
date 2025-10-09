@@ -82,7 +82,7 @@ export default class Experience {
   am: AssetManager | null = null;
   
   constructor(selector = "#sketch") {
-    console.log('🚀 初始化原生THREE.js Experience...');
+    
     
     // 获取容器
     this.container = document.querySelector(selector) as HTMLElement;
@@ -125,7 +125,7 @@ export default class Experience {
   }
 
   private initThreeJS() {
-    console.log('🎮 初始化THREE.js核心组件...');
+    
     
     // 创建场景
     this.scene = new THREE.Scene();
@@ -176,12 +176,12 @@ export default class Experience {
     // 窗口大小调整
     window.addEventListener('resize', this.onResize.bind(this));
 
-    console.log('✅ THREE.js核心组件初始化完成');
+    
   }
 
   private async initializeAsync() {
     try {
-      console.log('📦 开始异步初始化...');
+      
       
       // 设置GLTF解码器
       await this.setupGLTFDecoder();
@@ -199,7 +199,7 @@ export default class Experience {
       
       // 加载资源
       await this.am.loadResources(resourcesToLoad);
-      console.log('✅ 所有资源加载完成');
+      
       
       // 创建World系统
       this.world = new World(this);
@@ -213,7 +213,7 @@ export default class Experience {
       // 开始动画循环
       this.animate();
       
-      console.log('🎉 Experience初始化完成！');
+      
       
     } catch (error) {
       console.error('❌ Experience初始化失败:', error);
@@ -223,13 +223,13 @@ export default class Experience {
 
   private async setupGLTFDecoder() {
     try {
-      console.log('🔧 设置GLTF Meshopt解码器...');
+      
       
       // 创建GLTF加载器实例并设置解码器
       const loader = new GLTFLoader();
       loader.setMeshoptDecoder(MeshoptDecoder);
       
-      console.log('✅ GLTF Meshopt解码器设置完成');
+      
     } catch (error) {
       console.warn('⚠️ GLTF解码器设置失败:', error);
       throw error;

@@ -21,7 +21,7 @@ export default class DynamicEnv {
     this.experience = experience;
     this.config = config;
     
-    console.log('🌅 创建动态环境系统...');
+    
     
     this.init();
   }
@@ -89,7 +89,7 @@ export default class DynamicEnv {
     this._scene = new THREE.Scene();
     this._scene.add(this._quad);
     
-    console.log('✅ 动态环境系统初始化完成');
+    
   }
   
   update(deltaTime: number, elapsedTime: number) {
@@ -127,6 +127,6 @@ export default class DynamicEnv {
     this._fbo.dispose();
     this._material.dispose();
     this._quad.geometry.dispose();
-    console.log('🗑️ 动态环境系统已清理');
+    
   }
 }

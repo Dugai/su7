@@ -16,7 +16,7 @@ export default class Furina {
     this.experience = experience;
     this.realModel = model;
     
-    console.log('👤 初始化Furina角色组件...');
+    
     
     this.init();
   }
@@ -38,7 +38,7 @@ export default class Furina {
     // 设置动画
     this.setupAnimation();
     
-    console.log(`✅ Furina角色初始化完成，共 ${this.modelParts.length} 个部件`);
+    
   }
   
   private flattenModel(object: THREE.Object3D) {
@@ -50,7 +50,7 @@ export default class Furina {
   }
   
   private handleModel() {
-    console.log('🎨 处理Furina模型...');
+    
     
     // 设置模型缩放、旋转和位置
     this.model.scale.setScalar(0.074);
@@ -77,11 +77,11 @@ export default class Furina {
       }
     });
     
-    console.log('✅ Furina模型处理完成');
+    
   }
   
   private setupAnimation() {
-    console.log('🎬 设置Furina动画...');
+    
     
     // 创建动画混合器
     this.mixer = new THREE.AnimationMixer(this.model);
@@ -97,9 +97,9 @@ export default class Furina {
       this.mixer.update(1);
       this.isPaused = true;
       
-      console.log('✅ Furina驾驶动画已设置');
+      
     } else {
-      console.warn('⚠️ 未找到Furina动画');
+      
     }
   }
   
@@ -120,7 +120,7 @@ export default class Furina {
   // 播放动画
   playAction(name: string): THREE.AnimationAction | null {
     if (!this.actions[name]) {
-      console.warn(`⚠️ 动画 ${name} 未找到`);
+      
       return null;
     }
     
@@ -156,13 +156,11 @@ export default class Furina {
   // 暂停动画
   pause() {
     this.isPaused = true;
-    console.log('⏸️ Furina动画已暂停');
   }
   
   // 开始驾驶（恢复动画）
   drive() {
     this.isPaused = false;
-    console.log('🚗 Furina开始驾驶');
   }
   
   // 停止动画
@@ -172,7 +170,6 @@ export default class Furina {
       this.currentAction = null;
     }
     this.isPaused = true;
-    console.log('⏹️ Furina动画已停止');
   }
   
   dispose() {
@@ -207,6 +204,6 @@ export default class Furina {
       }
     });
     
-    console.log('🗑️ Furina角色组件已清理');
+    
   }
 }

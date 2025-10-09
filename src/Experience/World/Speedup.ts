@@ -12,7 +12,7 @@ export default class Speedup {
     this.experience = experience;
     this.model = model;
     
-    console.log('💨 初始化速度线特效组件...');
+    
     
     this.init();
   }
@@ -27,7 +27,7 @@ export default class Speedup {
     // 处理速度线材质
     this.handleModel();
     
-    console.log(`✅ 速度线特效初始化完成，共 ${this.modelParts.length} 个部件`);
+    
   }
   
   private flattenModel(object: THREE.Object3D) {
@@ -39,7 +39,7 @@ export default class Speedup {
   }
   
   private handleModel() {
-    console.log('🎨 创建速度线着色器材质...');
+    
     
     // 寻找速度线网格
     if (this.modelParts.length > 1) {
@@ -159,7 +159,7 @@ export default class Speedup {
         // 应用材质
         this.speedupMesh.material = this.material;
         
-        console.log('✅ 速度线着色器材质创建完成');
+        
       }
     }
   }
@@ -208,6 +208,6 @@ export default class Speedup {
       }
     });
     
-    console.log('🗑️ 速度线特效组件已清理');
+    
   }
 }

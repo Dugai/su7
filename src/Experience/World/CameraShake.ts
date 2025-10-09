@@ -19,7 +19,7 @@ export default class CameraShake {
     const { intensity = 1 } = config;
     this.intensity = intensity;
     
-    console.log('📳 初始化相机震动组件...');
+    
     
     this.init();
   }
@@ -31,7 +31,7 @@ export default class CameraShake {
     // 创建缓动偏移向量
     this._tweenedPosOffset = new THREE.Vector3(0, 0, 0);
     
-    console.log('✅ 相机震动组件初始化完成');
+    
   }
   
   update(deltaTime: number, elapsedTime: number) {
@@ -122,6 +122,6 @@ export default class CameraShake {
     // 重置相机位置
     this.reset();
     
-    console.log('🗑️ 相机震动组件已清理');
+    
   }
 }

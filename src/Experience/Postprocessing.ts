@@ -14,7 +14,7 @@ export default class Postprocessing {
   constructor(experience: Experience) {
     this.experience = experience;
     
-    console.log('✨ 初始化后处理系统...');
+    
     
     // 创建EffectComposer
     this.composer = new EffectComposer(this.experience.renderer);
@@ -42,7 +42,7 @@ export default class Postprocessing {
     const outputPass = new OutputPass();
     this.composer.addPass(outputPass);
     
-    console.log('✅ 后处理系统初始化完成');
+    
   }
   
   render() {

@@ -16,7 +16,7 @@ export default class StartRoom {
     this.experience = experience;
     this.model = model;
     
-    console.log('🏢 初始化展厅组件...');
+    
     
     this.init();
   }
@@ -31,7 +31,7 @@ export default class StartRoom {
     // 处理模型材质
     this.handleModel();
     
-    console.log(`✅ 展厅初始化完成，共 ${this.modelParts.length} 个部件`);
+    
   }
   
   private flattenModel(object: THREE.Object3D) {
@@ -43,7 +43,7 @@ export default class StartRoom {
   }
   
   private handleModel() {
-    console.log('🎨 处理展厅材质...');
+    
     
     // 处理光源材质（通常是索引1的部件）
     if (this.modelParts.length > 1) {
@@ -58,7 +58,7 @@ export default class StartRoom {
         this.lightMat.transparent = true;
         this.lightMat.alphaTest = 0.1;
         
-        console.log('💡 光源材质已设置');
+        
       }
     }
     
@@ -84,13 +84,13 @@ export default class StartRoom {
         // 创建自定义反射地面材质
         this.createCustomFloorMaterial(floorMat);
         
-        console.log('🏢 地面材质已设置');
+        
       }
     }
   }
   
   private createCustomFloorMaterial(baseMaterial: THREE.MeshPhysicalMaterial) {
-    console.log('🪞 创建简化反射地面材质...');
+    
     
     // 暂时使用简化版本，避免复杂的反射器导致的问题
     if (this.floorMesh) {
@@ -114,7 +114,7 @@ export default class StartRoom {
       this.customFloorMat = simplifiedMaterial as any; // 类型兼容
       this.floorMesh.material = simplifiedMaterial;
       
-      console.log('✅ 简化反射地面材质创建完成');
+      
     }
   }
   
@@ -189,6 +189,6 @@ export default class StartRoom {
         }
       });
     
-    console.log('🗑️ 展厅组件已清理');
+    
   }
 }
