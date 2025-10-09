@@ -10,8 +10,8 @@ export default class CameraShake {
   experience: Experience;
   intensity: number = 0;
   
-  private _tweenedPosOffset: THREE.Vector3;
-  private _originalPosition: THREE.Vector3;
+  private _tweenedPosOffset!: THREE.Vector3;
+  private _originalPosition!: THREE.Vector3;
   
   constructor(experience: Experience, config: Partial<CameraShakeConfig> = {}) {
     this.experience = experience;

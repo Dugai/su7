@@ -1,50 +1,84 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
-import gsap from "gsap";
 
 import World from "./World/World";
 import Postprocessing from "./Postprocessing";
 import AssetManager from "./AssetManager";
 import { resources } from "./resources";
 
+// 运行时参数配置（集中管理动画、光照、环境与交互的可调项）
 export interface ExperienceParams {
+  // 当前速度（驱动车轮旋转、速度线强度等）
   speed: number;
+  // 相机位置（用于动画过渡与交互限制）
   cameraPos: { x: number; y: number; z: number };
+  // 是否处于相机动画中（动画中会暂时禁用OrbitControls）
   isCameraMoving: boolean;
+
+  // 场景内局部发光颜色插值系数（0-1，用于地面灯带/局部发光渐入）
   lightAlpha: number;
+  // 局部发光强度（与lightAlpha配合控制“点亮”的节奏与亮度）
   lightIntensity: number;
+
+  // 环境贴图强度（整体环境光的明暗）
   envIntensity: number;
+  // 环境贴图混合权重（夜/日等两张HDR的混合比例，0更偏envmap1，1更偏envmap2）
   envWeight: number;
+
+  // 地面反射强度（用于反射材质/简化地面反射的整体亮度）
   reflectIntensity: number;
+  // 地面灯片透明度（入场/冲刺时对“发光贴片”的显隐控制）
   lightOpacity: number;
+
+  // 地面颜色插值用的辅助参数（用于逐帧改变量化后的地面颜色）
   floorLerpColor: number;
+  // 车身环境贴图强度（冲刺时提升以增强金属质感）
   carBodyEnvIntensity: number;
+  // 相机震动强度（0-1，提升速度时增加临场感）
   cameraShakeIntensity: number;
+
+  // Bloom的亮度平滑，数值越大，发光门限平滑越明显
   bloomLuminanceSmoothing: number;
+  // Bloom强度
   bloomIntensity: number;
+
+  // 速度线透明度（0-1）
   speedUpOpacity: number;
+
+  // 透视相机FOV（度数，冲刺时适当拉大以获得速度感）
   cameraFov: number;
+
+  // Furina配色插值（0-1，用于角色模型颜色的渐变控制）
   furinaLerpColor: number;
+  // 是否处于“冲刺模式”（用于切换一组动画/参数）
   isRushing: boolean;
+  // 临时禁用交互（入场或切换模式时防止误触）
   disableInteract: boolean;
+  // 是否启用Furina相关演示（通过URL hash判定）
   isFurina: boolean;
 }
 
 export default class Experience {
+  // 挂载DOM容器（通过选择器传入）
   container: HTMLElement;
-  scene: THREE.Scene;
-  camera: THREE.PerspectiveCamera;
-  renderer: THREE.WebGLRenderer;
-  clock: THREE.Clock;
-  controls: OrbitControls;
+  // THREE核心对象（在 initThreeJS 中完成赋值）
+  scene!: THREE.Scene;
+  camera!: THREE.PerspectiveCamera;
+  renderer!: THREE.WebGLRenderer;
+  // 全局时钟（驱动逐帧更新）
+  clock!: THREE.Clock;
+  // 轨道控制器（相机交互）
+  controls!: OrbitControls;
   
+  // 运行参数（集中在ExperienceParams）
   params: ExperienceParams;
+  // 世界（业务级3D内容与过场动画集合）
   world: World | null = null;
+  // 后处理管线（Bloom等）
   post: Postprocessing | null = null;
+  // 资源管理器（统一加载gltf/hdr/纹理等）
   am: AssetManager | null = null;
   
   constructor(selector = "#sketch") {

@@ -41,7 +41,7 @@ export default class Speedup {
   private handleModel() {
     console.log('🎨 创建速度线着色器材质...');
     
-    // 寻找速度线网格（通常是索引1的部件）
+    // 寻找速度线网格
     if (this.modelParts.length > 1) {
       this.speedupMesh = this.modelParts[1] as THREE.Mesh;
       

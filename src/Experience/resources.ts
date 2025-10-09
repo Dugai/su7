@@ -21,11 +21,11 @@ export const resources: ResourceItem[] = [
     type: "gltfModel",
     path: "/mesh/sm_speedup.gltf",
   },
-  {
-    name: "ut_car_body_ao",
-    type: "texture",
-    path: "/texture/t_car_body_AO.raw.jpg",
-  },
+  // {
+  //   name: "ut_car_body_ao",
+  //   type: "texture",
+  //   path: "/texture/t_car_body_AO.raw.jpg",
+  // },
   {
     name: "ut_startroom_ao",
     type: "texture",
