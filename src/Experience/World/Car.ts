@@ -42,7 +42,7 @@ export default class Car {
       const body = this.modelParts[1] as THREE.Mesh;
       if (body && body.material) {
         this.bodyMat = body.material as THREE.MeshStandardMaterial;
-        this.bodyMat.metalness = 1;
+        this.bodyMat.metalness = 0.8;
         this.bodyMat.roughness = 0.2;
       }
     }

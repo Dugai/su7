@@ -35,8 +35,6 @@ export default class World {
   constructor(experience: Experience) {
     this.experience = experience;
 
-    
-
     // 创建GSAP时间线
     this.t1 = gsap.timeline();
     this.t2 = gsap.timeline();
@@ -53,8 +51,6 @@ export default class World {
 
   private async init() {
     try {
-      
-
       // 设置场景背景
       this.experience.scene.background = new THREE.Color("black");
 
@@ -81,8 +77,6 @@ export default class World {
 
       // 开始入场动画
       this.enter();
-
-      
     } catch (error) {
       console.error("❌ World初始化失败:", error);
     }
@@ -102,69 +96,50 @@ export default class World {
       this.experience.scene.environment = this.dynamicEnv.envmap;
       this.dynamicEnv.setWeight(1);
       this.dynamicEnv.setIntensity(0.1);
-      
     } else {
       console.warn("⚠️ HDR环境贴图未找到，跳过动态环境创建");
     }
   }
 
   private createStartRoom() {
-    
-
     const startRoomModel = this.experience.am?.getGLTF("sm_startroom");
     if (startRoomModel) {
       this.startRoom = new StartRoom(this.experience, startRoomModel);
-      
     } else {
       console.warn("⚠️ 展厅模型未找到，跳过展厅创建");
     }
   }
 
   private createCar() {
-    
-
     const carModel = this.experience.am?.getGLTF("sm_car");
     if (carModel) {
       this.car = new Car(this.experience, carModel);
-      
     } else {
       console.warn("⚠️ 汽车模型未找到，跳过汽车创建");
     }
   }
 
   private createSpeedup() {
-    
-
     const speedupModel = this.experience.am?.getGLTF("sm_speedup");
     if (speedupModel) {
       this.speedup = new Speedup(this.experience, speedupModel);
-      
     } else {
       console.warn("⚠️ 速度线模型未找到，跳过速度线创建");
     }
   }
 
-
   private createEnvironmentReflection() {
-    
-
     // 创建立方体渲染目标用于环境反射
     this.environment = new THREE.WebGLCubeRenderTarget(512, {
       type: THREE.UnsignedByteType,
       generateMipmaps: true,
       minFilter: THREE.LinearMipmapLinearFilter,
     });
-
-    
   }
 
   private createCameraShake() {
-    
-
     this.cameraShake = new CameraShake(this.experience);
     this.cameraShake.setIntensity(0);
-
-    
   }
 
   private setupInteractions() {
@@ -196,7 +171,6 @@ export default class World {
         "click",
         onMouseClick
       );
-      
     }
   }
 
@@ -224,8 +198,6 @@ export default class World {
 
   // 入场动画
   enter() {
-    
-
     this.experience.params.disableInteract = true;
 
     // 初始化状态
@@ -254,7 +226,6 @@ export default class World {
       onComplete: () => {
         this.experience.params.isCameraMoving = false;
         this.experience.params.disableInteract = false;
-        
       },
     });
 
@@ -264,8 +235,8 @@ export default class World {
     const whiteColor = new THREE.Color("#ffffff");
 
     this.t2.to(this.experience.params, {
-      lightAlpha: 0.3,
-      lightIntensity: 0.63,
+      lightAlpha: 0.5,
+      lightIntensity: 0.3,
       reflectIntensity: 1,
       duration: 3,
       delay: 1,
@@ -290,8 +261,8 @@ export default class World {
     // 环境动画
     this.t3
       .to(this.experience.params, {
-        envIntensity: 0.3,
-        duration: 4,
+        envIntensity: 0.1,
+        duration: 3,
         delay: 0.5,
         ease: "power2.inOut",
         onUpdate: () => {
@@ -304,7 +275,7 @@ export default class World {
         this.experience.params,
         {
           envWeight: 0.8,
-          duration: 4,
+          duration: 3,
           ease: "power2.inOut",
           onUpdate: () => {
             if (this.dynamicEnv) {
@@ -314,11 +285,11 @@ export default class World {
         },
         "-=2.5"
       );
+
   }
 
   // 直接进入（跳过动画）
   enterDirectly() {
-  
     document.querySelector(".loader-screen")?.classList.add("hollow");
     this.experience.params.isCameraMoving = false;
     this.experience.controls.object.position.set(0, 0.8, -7);
@@ -329,8 +300,6 @@ export default class World {
       this.dynamicEnv.setIntensity(1);
       this.dynamicEnv.setWeight(1);
     }
-
-    
   }
 
   // 冲刺模式
@@ -343,8 +312,6 @@ export default class World {
     if (this.experience.params.disableInteract) {
       return;
     }
-
-    
 
     this.experience.params.disableInteract = true;
     this.clearAllTweens();
@@ -467,8 +434,6 @@ export default class World {
         }
       },
     });
-
-    
   }
 
   // 结束冲刺模式
@@ -476,8 +441,6 @@ export default class World {
     if (this.experience.params.disableInteract) {
       return;
     }
-
-    
 
     this.experience.params.disableInteract = true;
     this.clearAllTweens();
@@ -492,7 +455,6 @@ export default class World {
     if (this.dynamicEnv) {
       this.experience.scene.environment = this.dynamicEnv.envmap;
     }
-
   }
 
   dispose() {
