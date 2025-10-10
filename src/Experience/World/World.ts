@@ -96,8 +96,6 @@ export default class World {
   }
 
   private async createDynamicEnvironment() {
-    
-
     const envmap1 = this.experience.am?.createEnvMapFromHDR("ut_env_night");
     const envmap2 = this.experience.am?.createEnvMapFromHDR("ut_env_light");
 
@@ -188,8 +186,6 @@ export default class World {
   }
 
   private setupInteractions() {
-    
-
     if (this.car) {
       // 添加点击事件监听
       const raycaster = new THREE.Raycaster();
