@@ -42,41 +42,27 @@ export default class Car {
       const body = this.modelParts[1] as THREE.Mesh;
       if (body && body.material) {
         this.bodyMat = body.material as THREE.MeshStandardMaterial;
-
-        // 增强金属质感
-        this.bodyMat.metalness = 0.7;
-        this.bodyMat.roughness = 0.5;
-        this.bodyMat.envMapIntensity = 1;
-        
-        // 关闭自发光，避免发光效果
-        this.bodyMat.emissive = new THREE.Color(0x000000); // 黑色=无发光
-        this.bodyMat.emissiveIntensity = 0;
-        
-        // 启用色调映射，让颜色更自然
-        this.bodyMat.toneMapped = true;
+        this.bodyMat.metalness = 1;
+        this.bodyMat.roughness = 0.2;
       }
     }
 
-    // 为所有网格添加AO贴图并优化材质
+    // 仅对车身主体应用 AO，避免其它部件出现奇怪图案
     const aoTexture = this.experience.am?.getTexture("ut_car_body_ao");
     this.modelParts.forEach((part) => {
       if (part.type === "Mesh") {
         const mesh = part as THREE.Mesh;
-        if (mesh.material) {
-          const material = mesh.material as THREE.MeshStandardMaterial;
-          
-          // 应用AO贴图
-          if (aoTexture) {
-            material.aoMap = aoTexture;
-            // 确保存在 uv2；若无则复制 uv 到 uv2 供 AO 使用
-            const geom: any = mesh.geometry;
-            if (geom && geom.attributes) {
-              if (!geom.attributes.uv2 && geom.attributes.uv) {
-                geom.setAttribute("uv2", geom.attributes.uv.clone());
-              }
-            }
-            // 适当降低 AO 强度，避免整体发灰/脏块感
-            material.aoMapIntensity = 0.4;
+        if (!mesh.material) return;
+        const material = mesh.material as THREE.MeshStandardMaterial;
+
+        // 只对 body（modelParts[1]）应用 AO；其他零件移除 AO
+        const isBodyMesh = this.modelParts[1] === mesh;
+        if (isBodyMesh && aoTexture) {
+         material.aoMap = aoTexture;
+        } else {
+          // 移除非主体部件上的 AO，避免奇怪花纹
+          if (material.aoMap) {
+            material.aoMap = null as any;
             material.needsUpdate = true;
           }
         }
