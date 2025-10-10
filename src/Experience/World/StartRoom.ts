@@ -40,24 +40,26 @@ export default class StartRoom {
   }
 
   private handleModel() {
-    // 处理光源材质（通常是索引1的部件）
+    // 处理光源材质
     if (this.modelParts.length > 1) {
       const light001 = this.modelParts[1] as THREE.Mesh;
       if (light001 && light001.material) {
+        console.log(light001.material, "展厅材质部件");
         this.lightMat = light001.material as THREE.MeshStandardMaterial;
 
-        // 设置发光材质
-        this.lightMat.emissive = new THREE.Color("white");
-        this.lightMat.emissiveIntensity = 1;
-        this.lightMat.toneMapped = false;
+        this.lightMat.emissive = new THREE.Color("white");  // 白色自发光
+        this.lightMat.emissiveIntensity = 100;  // 增加发光强度，更亮
+        this.lightMat.envMapIntensity = 0.2;  // 极少的环境光反射
+        this.lightMat.toneMapped = false;  // 不受色调映射影响
         this.lightMat.transparent = true;
+        this.lightMat.metalness = 1;
         this.lightMat.alphaTest = 0.1;
       }
     }
 
     // 处理反射地面（通常是索引2的部件）
     if (this.modelParts.length > 2) {
-      console.log(this.modelParts, "展厅材质部件");
+      console.log(this.modelParts, "展厅材质部件 地板");
       this.floorMesh = this.modelParts[2] as THREE.Mesh;
       if (this.floorMesh && this.floorMesh.material) {
         const floorMat = this.floorMesh.material as THREE.MeshPhysicalMaterial;
@@ -75,7 +77,7 @@ export default class StartRoom {
         if (normalTexture) floorMat.normalMap = normalTexture;
         if (roughnessTexture) floorMat.roughnessMap = roughnessTexture;
 
-        floorMat.envMapIntensity = 0;
+        floorMat.envMapIntensity = 1;
 
         // 创建自定义反射地面材质
         this.createCustomFloorMaterial(floorMat);
@@ -95,9 +97,9 @@ export default class StartRoom {
         lightMap: baseMaterial.lightMap,
 
         // 高反射设置
-        metalness: 0.1,
+        metalness: 0.2,
         roughness: 0.1,
-        envMapIntensity: 2.0,
+        envMapIntensity: 1,
 
         // 动态颜色（将在update中修改）
         color: new THREE.Color("#ffffff"),

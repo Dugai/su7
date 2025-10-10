@@ -50,14 +50,10 @@ export interface ExperienceParams {
   // 透视相机FOV（度数，冲刺时适当拉大以获得速度感）
   cameraFov: number;
 
-  // Furina配色插值（0-1，用于角色模型颜色的渐变控制）
-  furinaLerpColor: number;
-  // 是否处于“冲刺模式”（用于切换一组动画/参数）
+  // 是否处于"冲刺模式"（用于切换一组动画/参数）
   isRushing: boolean;
   // 临时禁用交互（入场或切换模式时防止误触）
   disableInteract: boolean;
-  // 是否启用Furina相关演示（通过URL hash判定）
-  isFurina: boolean;
 }
 
 export default class Experience {
@@ -108,10 +104,8 @@ export default class Experience {
       bloomIntensity: 1,
       speedUpOpacity: 0,
       cameraFov: 33.4,
-      furinaLerpColor: 0,
       isRushing: false,
       disableInteract: false,
-      isFurina: window.location.hash === "#furina",
     };
 
     // 设置全局引用
@@ -175,7 +169,6 @@ export default class Experience {
 
     // 窗口大小调整
     window.addEventListener('resize', this.onResize.bind(this));
-
     
   }
 
@@ -189,16 +182,8 @@ export default class Experience {
       // 创建资源管理器
       this.am = new AssetManager();
       
-      // 过滤资源（如果不是Furina模式）
-      let resourcesToLoad = resources;
-      if (!this.params.isFurina) {
-        resourcesToLoad = resourcesToLoad.filter(
-          (item) => !["driving", "decal"].includes(item.name)
-        );
-      }
-      
       // 加载资源
-      await this.am.loadResources(resourcesToLoad);
+      await this.am.loadResources(resources);
       
       
       // 创建World系统
@@ -212,9 +197,6 @@ export default class Experience {
       
       // 开始动画循环
       this.animate();
-      
-      
-      
     } catch (error) {
       console.error('❌ Experience初始化失败:', error);
       this.showError(error);
@@ -223,12 +205,9 @@ export default class Experience {
 
   private async setupGLTFDecoder() {
     try {
-      
-      
       // 创建GLTF加载器实例并设置解码器
       const loader = new GLTFLoader();
       loader.setMeshoptDecoder(MeshoptDecoder);
-      
       
     } catch (error) {
       console.warn('⚠️ GLTF解码器设置失败:', error);

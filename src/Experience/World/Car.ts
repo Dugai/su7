@@ -29,7 +29,7 @@ export default class Car {
   private flattenModel(object: THREE.Object3D) {
     // 递归遍历模型，收集所有网格
     object.traverse((child) => {
-      if (child.isMesh || child.isGroup) {
+      if ((child as any).type === "Mesh" || (child as any).type === "Group") {
         this.modelParts.push(child);
       }
     });
@@ -43,34 +43,45 @@ export default class Car {
       if (body && body.material) {
         this.bodyMat = body.material as THREE.MeshStandardMaterial;
 
-        // 设置小米经典蓝色
-        // this.bodyMat.color = new THREE.Color("#ff0000");
-
-        // // 如果是Furina模式，使用白色和贴花
-        // if (this.experience.params.isFurina) {
-        //   this.bodyMat.color = new THREE.Color("white");
-        //   const decalTexture = this.experience.am?.getTexture("decal");
-        //   if (decalTexture) {
-        //     this.bodyMat.map = decalTexture;
-        //   }
-        // }
+        // 增强金属质感
+        this.bodyMat.metalness = 0.7;
+        this.bodyMat.roughness = 0.5;
+        this.bodyMat.envMapIntensity = 1;
+        
+        // 关闭自发光，避免发光效果
+        this.bodyMat.emissive = new THREE.Color(0x000000); // 黑色=无发光
+        this.bodyMat.emissiveIntensity = 0;
+        
+        // 启用色调映射，让颜色更自然
+        this.bodyMat.toneMapped = true;
       }
     }
 
-    // 为所有网格添加AO贴图
+    // 为所有网格添加AO贴图并优化材质
     const aoTexture = this.experience.am?.getTexture("ut_car_body_ao");
-    if (aoTexture) {
-      this.modelParts.forEach((part) => {
-        if (part.type === "Mesh") {
-          const mesh = part as THREE.Mesh;
-          if (mesh.material) {
-            const material = mesh.material as THREE.MeshStandardMaterial;
+    this.modelParts.forEach((part) => {
+      if (part.type === "Mesh") {
+        const mesh = part as THREE.Mesh;
+        if (mesh.material) {
+          const material = mesh.material as THREE.MeshStandardMaterial;
+          
+          // 应用AO贴图
+          if (aoTexture) {
             material.aoMap = aoTexture;
+            // 确保存在 uv2；若无则复制 uv 到 uv2 供 AO 使用
+            const geom: any = mesh.geometry;
+            if (geom && geom.attributes) {
+              if (!geom.attributes.uv2 && geom.attributes.uv) {
+                geom.setAttribute("uv2", geom.attributes.uv.clone());
+              }
+            }
+            // 适当降低 AO 强度，避免整体发灰/脏块感
+            material.aoMapIntensity = 0.4;
             material.needsUpdate = true;
           }
         }
-      });
-    }
+      }
+    });
 
     // 寻找车轮模型（通常是索引35的部件，参考原始代码）
     if (this.modelParts.length) {
@@ -79,7 +90,7 @@ export default class Car {
     }
   }
 
-  update(deltaTime: number, elapsedTime: number) {
+  update(_deltaTime: number, _elapsedTime: number) {
     // 根据速度旋转车轮
     if (this.wheelModelParts && this.experience.params.speed > 0) {
       this.wheelModelParts.forEach((wheel) => {

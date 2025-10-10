@@ -27,14 +27,14 @@ export default class Postprocessing {
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
       this.experience.params.bloomIntensity, // 强度
-      0.4, // 半径
-      0.85 // 阈值
+      0.3, // 半径（减小，减少光晕扩散）
+      0.9 // 阈值（提高，只有很亮的物体才发光）
     );
     
-    // 设置Bloom参数
-    this.bloomPass.threshold = 0;
-    this.bloomPass.strength = this.experience.params.bloomIntensity;
-    this.bloomPass.radius = 0.4;
+    // 设置Bloom参数，减少车身光晕
+    this.bloomPass.threshold = 0.8; // 提高阈值，减少普通物体的光晕
+    this.bloomPass.strength = this.experience.params.bloomIntensity * 0.6; // 降低强度
+    this.bloomPass.radius = 0.3; // 减小半径
     
     this.composer.addPass(this.bloomPass);
     

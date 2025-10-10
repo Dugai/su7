@@ -7,7 +7,6 @@ import StartRoom from "./StartRoom";
 import DynamicEnv from "./DynamicEnv";
 import Speedup from "./Speedup";
 import CameraShake from "./CameraShake";
-import Furina from "./Furina";
 
 export default class World {
   experience: Experience;
@@ -18,7 +17,6 @@ export default class World {
   dynamicEnv: DynamicEnv | null = null;
   speedup: Speedup | null = null;
   cameraShake: CameraShake | null = null;
-  furina: Furina | null = null;
 
   // 环境反射
   environment: THREE.WebGLCubeRenderTarget | null = null;
@@ -72,11 +70,6 @@ export default class World {
       // 创建速度线特效
       this.createSpeedup();
 
-      // 创建Furina角色（如果启用）
-      if (this.experience.params.isFurina) {
-        this.createFurina();
-      }
-
       // 创建环境反射
       this.createEnvironmentReflection();
 
@@ -108,7 +101,7 @@ export default class World {
       // 设置场景环境
       this.experience.scene.environment = this.dynamicEnv.envmap;
       this.dynamicEnv.setWeight(1);
-
+      this.dynamicEnv.setIntensity(0.1);
       
     } else {
       console.warn("⚠️ HDR环境贴图未找到，跳过动态环境创建");
@@ -151,17 +144,6 @@ export default class World {
     }
   }
 
-  private createFurina() {
-    
-
-    const furinaModel = this.experience.am?.getFBX("driving");
-    if (furinaModel) {
-      this.furina = new Furina(this.experience, furinaModel);
-      
-    } else {
-      console.warn("⚠️ Furina模型未找到，跳过角色创建");
-    }
-  }
 
   private createEnvironmentReflection() {
     
@@ -225,7 +207,6 @@ export default class World {
     this.dynamicEnv?.update(deltaTime, elapsedTime);
     this.speedup?.update(deltaTime, elapsedTime);
     this.cameraShake?.update(deltaTime, elapsedTime);
-    this.furina?.update(deltaTime, elapsedTime);
   }
 
   // 清除所有动画
@@ -259,10 +240,6 @@ export default class World {
       this.startRoom.setReflectIntensity(0);
     }
 
-    if (this.furina) {
-      this.furina.setColor(new THREE.Color("#000000"));
-    }
-
     // 显示挖空的加载屏幕
     document.querySelector(".loader-screen")?.classList.add("hollow");
 
@@ -287,10 +264,10 @@ export default class World {
     const whiteColor = new THREE.Color("#ffffff");
 
     this.t2.to(this.experience.params, {
-      lightAlpha: 0.2,
-      lightIntensity: 0.2,
-      reflectIntensity: 0,
-      duration: 4,
+      lightAlpha: 0.3,
+      lightIntensity: 0.63,
+      reflectIntensity: 1,
+      duration: 3,
       delay: 1,
       ease: "power2.inOut",
       onUpdate: () => {
@@ -307,17 +284,13 @@ export default class World {
             this.experience.params.reflectIntensity
           );
         }
-
-        if (this.furina) {
-          this.furina.setColor(lightColor);
-        }
       },
     });
 
     // 环境动画
     this.t3
       .to(this.experience.params, {
-        envIntensity: 1,
+        envIntensity: 0.3,
         duration: 4,
         delay: 0.5,
         ease: "power2.inOut",
@@ -330,7 +303,7 @@ export default class World {
       .to(
         this.experience.params,
         {
-          envWeight: 1,
+          envWeight: 0.8,
           duration: 4,
           ease: "power2.inOut",
           onUpdate: () => {
@@ -345,8 +318,7 @@ export default class World {
 
   // 直接进入（跳过动画）
   enterDirectly() {
-    
-
+  
     document.querySelector(".loader-screen")?.classList.add("hollow");
     this.experience.params.isCameraMoving = false;
     this.experience.controls.object.position.set(0, 0.8, -7);
@@ -381,14 +353,6 @@ export default class World {
     const blackColor = new THREE.Color("#000000");
     const camera = this.experience.camera;
 
-    const furinaColor = new THREE.Color();
-    const furinaFadeColor = new THREE.Color("#666666");
-
-    // 启动Furina驾驶动画
-    if (this.furina) {
-      this.furina.drive();
-    }
-
     // 速度动画
     this.t4
       .to(this.experience.params, {
@@ -418,30 +382,20 @@ export default class World {
       },
     });
 
-    // 地面和Furina颜色动画
+    // 地面颜色动画
     this.t6.fromTo(
       this.experience.params,
       {
         floorLerpColor: 0,
-        furinaLerpColor: 0,
       },
       {
         floorLerpColor: 1,
-        furinaLerpColor: 1,
         duration: 4,
         ease: "none",
         onUpdate: () => {
           floorColor.lerp(blackColor, this.experience.params.floorLerpColor);
           if (this.startRoom) {
             this.startRoom.setFloorColor(floorColor);
-          }
-
-          furinaColor.lerp(
-            furinaFadeColor,
-            this.experience.params.furinaLerpColor
-          );
-          if (this.furina) {
-            this.furina.setColor(furinaColor);
           }
         },
       }
@@ -528,13 +482,6 @@ export default class World {
     this.experience.params.disableInteract = true;
     this.clearAllTweens();
 
-    // 预留变量在完整恢复动画时使用，当前不需要则去除以消除TS告警
-
-    // 暂停Furina动画
-    if (this.furina) {
-      this.furina.pause();
-    }
-
     // 恢复所有参数到初始状态的动画...
     // （这里可以添加完整的恢复动画逻辑）
 
@@ -546,7 +493,6 @@ export default class World {
       this.experience.scene.environment = this.dynamicEnv.envmap;
     }
 
-    
   }
 
   dispose() {
@@ -556,7 +502,6 @@ export default class World {
     this.dynamicEnv?.dispose();
     this.speedup?.dispose();
     this.cameraShake?.dispose();
-    this.furina?.dispose();
 
     // 清理环境反射
     this.environment?.dispose();
