@@ -36,3 +36,4 @@ yarn-error.log*
 # Vite
 .vite 
 .codelink
+.vscode/mcp-project-config.json
