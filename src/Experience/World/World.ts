@@ -220,7 +220,7 @@ export default class World {
     this.t1.to(this.experience.params.cameraPos, {
       x: 0,
       y: 0.8,
-      z: -8,
+      z: -7,
       duration: 4,
       ease: "power2.inOut",
       onComplete: () => {
