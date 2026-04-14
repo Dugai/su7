@@ -85,7 +85,6 @@ export default class StartRoom {
           {
             resolution: 1024,
             ignoreObjects: [lightMesh, this.floorMesh],
-            clipBias: 0.002,
           }
         );
         this.createCustomFloorMaterial(floorMat);
@@ -107,7 +106,7 @@ export default class StartRoom {
           roughnessMap: { value: baseMaterial.roughnessMap },
           aoMap: { value: baseMaterial.aoMap },
           lightMap: { value: baseMaterial.lightMap },
-          uColor: { value: new THREE.Color("#ffffff") },
+          uColor: { value: new THREE.Color("#000") },
           uSpeed: { value: this.experience.params.speed },
           uReflectMatrix: {
             value:
@@ -173,7 +172,7 @@ export default class StartRoom {
   // 设置反射强度
   setReflectIntensity(intensity: number) {
     if (this.customFloorMat) {
-      this.customFloorMat.uniforms.uReflectIntensity.value = intensity * 3;
+      this.customFloorMat.uniforms.uReflectIntensity.value = intensity;
     }
   }
 

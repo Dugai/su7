@@ -27,22 +27,22 @@ vec3 packedTexture2DLOD(sampler2D tex, vec2 uv, float level, vec2 texSize) {
 
 void main(){
     vec2 p=vUv_;
-    
+
     vec2 surfaceNormalUv=vWorldPosition.xz;
     surfaceNormalUv.x+=iTime*uSpeed;
     vec3 surfaceNormal=texture2D(normalMap,surfaceNormalUv).rgb*2.0-1.0;
     surfaceNormal=surfaceNormal.rbg;
     surfaceNormal=normalize(mix(vNormalW,surfaceNormal,0.7));
-    
+
     vec3 viewDir=cameraPosition-vWorldPosition.xyz;
     float d=length(viewDir);
     viewDir=normalize(viewDir);
-    
+
     vec2 distortion=surfaceNormal.xz*(0.001+1.0/max(d,0.001));
-    
+
     vec4 reflectPoint=uReflectMatrix*vWorldPosition;
     reflectPoint=reflectPoint/reflectPoint.w;
-    
+
     vec2 roughnessUv=vWorldPosition.xz;
     roughnessUv.x+=iTime*uSpeed;
     float roughnessValue=texture2D(roughnessMap,roughnessUv).r;
@@ -51,12 +51,19 @@ void main(){
     float level=roughnessValue;
     vec2 finalUv=reflectPoint.xy+distortion;
     vec3 reflectionSample=packedTexture2DLOD(uReflectTexture,finalUv,level,uMipmapTextureSize);
-    reflectionSample*=uReflectIntensity;
-    
+    reflectionSample*=uReflectIntensity*0.5;
+
+    // 基础颜色
     vec3 col=uColor;
-    col*=3.0;
-    vec3 fres=fresnel(vec3(0.0),surfaceNormal,viewDir);
+
+    // Fresnel：F0=0.5 让整体反射更明显
+    vec3 fres=fresnel(vec3(0.5),surfaceNormal,viewDir);
+
+    // 混合：反射为主，基础色为辅
     col=mix(col,reflectionSample,fres);
-    
+
     gl_FragColor=vec4(col,1.0);
 }
+
+
+
