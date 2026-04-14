@@ -15,6 +15,10 @@ class MeshReflectorMaterial {
   private _reflectPlane!: THREE.Plane;
   private _reflectMatrix!: THREE.Matrix4;
   private _renderTarget!: THREE.WebGLRenderTarget;
+  private _mipmapRenderTarget!: THREE.WebGLRenderTarget;
+  private _blitScene!: THREE.Scene;
+  private _blitCamera!: THREE.OrthographicCamera;
+  private _blitMaterial!: THREE.ShaderMaterial;
   
   constructor(
     experience: Experience,
@@ -56,12 +60,61 @@ class MeshReflectorMaterial {
         magFilter: THREE.LinearFilter,
       }
     );
+
+    this._mipmapRenderTarget = new THREE.WebGLRenderTarget(
+      this.config.resolution,
+      this.config.resolution,
+      {
+        type: THREE.UnsignedByteType,
+        format: THREE.RGBAFormat,
+        generateMipmaps: true,
+        minFilter: THREE.LinearMipmapLinearFilter,
+        magFilter: THREE.LinearFilter,
+      }
+    );
+    this._mipmapRenderTarget.texture.wrapS = THREE.ClampToEdgeWrapping;
+    this._mipmapRenderTarget.texture.wrapT = THREE.ClampToEdgeWrapping;
+
+    this._blitScene = new THREE.Scene();
+    this._blitCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this._blitMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tInput: { value: this._renderTarget.texture },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tInput;
+        varying vec2 vUv;
+        void main() {
+          gl_FragColor = texture2D(tInput, vUv);
+        }
+      `,
+      depthTest: false,
+      depthWrite: false,
+    });
+    const blitQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this._blitMaterial);
+    this._blitScene.add(blitQuad);
     
     console.log(`✅ 反射器材质初始化完成 (分辨率: ${this.config.resolution})`);
   }
   
   update() {
     this.beforeRender();
+    this.updateMipmapTarget();
+  }
+
+  private updateMipmapTarget() {
+    const currentRenderTarget = this.experience.renderer.getRenderTarget();
+    this._blitMaterial.uniforms.tInput.value = this._renderTarget.texture;
+    this.experience.renderer.setRenderTarget(this._mipmapRenderTarget);
+    this.experience.renderer.render(this._blitScene, this._blitCamera);
+    this.experience.renderer.setRenderTarget(currentRenderTarget);
   }
   
   private beforeRender() {
@@ -164,6 +217,17 @@ class MeshReflectorMaterial {
   get renderTarget(): THREE.WebGLRenderTarget {
     return this._renderTarget;
   }
+
+  get mipmapRenderTarget(): THREE.WebGLRenderTarget {
+    return this._mipmapRenderTarget;
+  }
+
+  get renderTargetSize(): THREE.Vector2 {
+    return new THREE.Vector2(
+      this._renderTarget.width,
+      this._renderTarget.height
+    );
+  }
   
   get reflectMatrix(): THREE.Matrix4 {
     return this._reflectMatrix;
@@ -171,6 +235,8 @@ class MeshReflectorMaterial {
   
   dispose() {
     this._renderTarget.dispose();
+    this._mipmapRenderTarget.dispose();
+    this._blitMaterial.dispose();
     console.log('🗑️ 反射器材质已清理');
   }
 }

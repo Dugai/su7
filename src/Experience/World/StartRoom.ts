@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import type Experience from "../Experience";
 import { MeshReflectorMaterial } from "../Utils/MeshReflectorMaterial";
+import reflecFloorVertexShader from "../Shaders/ReflecFloor/vert.glsl?raw";
+import reflecFloorFragmentShader from "../Shaders/ReflecFloor/frag.glsl?raw";
 
 export default class StartRoom {
   experience: Experience;
@@ -9,8 +11,7 @@ export default class StartRoom {
 
   lightMat: THREE.MeshStandardMaterial | null = null;
   floorMesh: THREE.Mesh | null = null;
-  customFloorMat: THREE.ShaderMaterial | THREE.MeshStandardMaterial | null =
-    null;
+  customFloorMat: THREE.ShaderMaterial | null = null;
   reflectorMaterial: MeshReflectorMaterial | null = null;
 
   constructor(experience: Experience, model: any) {
@@ -33,7 +34,7 @@ export default class StartRoom {
 
   private flattenModel(object: THREE.Object3D) {
     object.traverse((child) => {
-      if (child.isMesh || child.isGroup) {
+      if (child instanceof THREE.Mesh || child instanceof THREE.Group) {
         this.modelParts.push(child);
       }
     });
@@ -44,22 +45,19 @@ export default class StartRoom {
     if (this.modelParts.length > 1) {
       const light001 = this.modelParts[1] as THREE.Mesh;
       if (light001 && light001.material) {
-        console.log(light001.material, "展厅材质部件");
         this.lightMat = light001.material as THREE.MeshStandardMaterial;
 
-        this.lightMat.emissive = new THREE.Color("white");  // 白色自发光
-        this.lightMat.emissiveIntensity = 100;  // 增加发光强度，更亮
-        this.lightMat.envMapIntensity = 0.2;  // 极少的环境光反射
-        this.lightMat.toneMapped = false;  // 不受色调映射影响
+        this.lightMat.emissive = new THREE.Color("white");
+        this.lightMat.emissiveIntensity = 0;
+        this.lightMat.envMapIntensity = 0;
+        this.lightMat.toneMapped = false;
         this.lightMat.transparent = true;
-        this.lightMat.metalness = 1;
         this.lightMat.alphaTest = 0.1;
       }
     }
 
     // 处理反射地面（通常是索引2的部件）
     if (this.modelParts.length > 2) {
-      console.log(this.modelParts, "展厅材质部件 地板");
       this.floorMesh = this.modelParts[2] as THREE.Mesh;
       if (this.floorMesh && this.floorMesh.material) {
         const floorMat = this.floorMesh.material as THREE.MeshPhysicalMaterial;
@@ -77,47 +75,78 @@ export default class StartRoom {
         if (normalTexture) floorMat.normalMap = normalTexture;
         if (roughnessTexture) floorMat.roughnessMap = roughnessTexture;
 
-        floorMat.envMapIntensity = 1;
+        floorMat.envMapIntensity = 0;
 
-        // 创建自定义反射地面材质
+        // 创建反射器并注入shader uniforms（对齐example逻辑）
+        const lightMesh = this.modelParts[1] as THREE.Mesh;
+        this.reflectorMaterial = new MeshReflectorMaterial(
+          this.experience,
+          this.floorMesh,
+          {
+            resolution: 1024,
+            ignoreObjects: [lightMesh, this.floorMesh],
+            clipBias: 0.002,
+          }
+        );
         this.createCustomFloorMaterial(floorMat);
       }
     }
   }
 
   private createCustomFloorMaterial(baseMaterial: THREE.MeshPhysicalMaterial) {
-    // 暂时使用简化版本，避免复杂的反射器导致的问题
     if (this.floorMesh) {
-      // 创建简化的PBR材质，具有高反射性
-      const simplifiedMaterial = new THREE.MeshStandardMaterial({
-        map: baseMaterial.map,
-        normalMap: baseMaterial.normalMap,
-        roughnessMap: baseMaterial.roughnessMap,
-        aoMap: baseMaterial.aoMap,
-        lightMap: baseMaterial.lightMap,
-
-        // 高反射设置
-        metalness: 0.2,
-        roughness: 0.1,
-        envMapIntensity: 1,
-
-        // 动态颜色（将在update中修改）
-        color: new THREE.Color("#ffffff"),
+      const customMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          iTime: { value: 0 },
+          iResolution: {
+            value: new THREE.Vector2(window.innerWidth, window.innerHeight),
+          },
+          iMouse: { value: new THREE.Vector2(0, 0) },
+          map: { value: baseMaterial.map },
+          normalMap: { value: baseMaterial.normalMap },
+          roughnessMap: { value: baseMaterial.roughnessMap },
+          aoMap: { value: baseMaterial.aoMap },
+          lightMap: { value: baseMaterial.lightMap },
+          uColor: { value: new THREE.Color("#ffffff") },
+          uSpeed: { value: this.experience.params.speed },
+          uReflectMatrix: {
+            value:
+              this.reflectorMaterial?.reflectMatrix ?? new THREE.Matrix4(),
+          },
+          uReflectTexture: {
+            value: this.reflectorMaterial?.mipmapRenderTarget.texture ?? null,
+          },
+          uReflectIntensity: { value: 3 },
+          uMipmapTextureSize: {
+            value:
+              this.reflectorMaterial?.renderTargetSize ??
+              new THREE.Vector2(1024, 1024),
+          },
+        },
+        vertexShader: reflecFloorVertexShader,
+        fragmentShader: reflecFloorFragmentShader,
+        transparent: baseMaterial.transparent,
+        side: baseMaterial.side,
+        depthWrite: baseMaterial.depthWrite,
+        depthTest: baseMaterial.depthTest,
       });
 
-      this.customFloorMat = simplifiedMaterial as any; // 类型兼容
-      this.floorMesh.material = simplifiedMaterial;
+      this.customFloorMat = customMaterial;
+      this.floorMesh.material = customMaterial;
+
+      window.addEventListener("resize", this.onResize);
     }
   }
 
-  update(deltaTime: number, elapsedTime: number) {
-    // 更新反射器（如果存在）
+  update(_deltaTime: number, elapsedTime: number) {
     if (this.reflectorMaterial) {
       this.reflectorMaterial.update();
     }
 
-    // 简化版本不需要特殊的uniform更新
-    // 动态参数通过其他方法设置
+    if (this.customFloorMat) {
+      this.customFloorMat.uniforms.iTime.value = elapsedTime;
+      this.customFloorMat.uniforms.uSpeed.value = this.experience.params.speed;
+    }
   }
 
   // 设置光源强度
@@ -136,20 +165,30 @@ export default class StartRoom {
 
   // 设置地面颜色
   setFloorColor(color: THREE.Color) {
-    if (this.customFloorMat && (this.customFloorMat as any).color) {
-      (this.customFloorMat as any).color.copy(color);
+    if (this.customFloorMat) {
+      this.customFloorMat.uniforms.uColor.value.copy(color);
     }
   }
 
   // 设置反射强度
   setReflectIntensity(intensity: number) {
-    if (
-      this.customFloorMat &&
-      (this.customFloorMat as any).envMapIntensity !== undefined
-    ) {
-      (this.customFloorMat as any).envMapIntensity = intensity * 0.1; // 缩放到合理范围
+    if (this.customFloorMat) {
+      this.customFloorMat.uniforms.uReflectIntensity.value = intensity * 3;
     }
   }
+
+  private onResize = () => {
+    if (this.customFloorMat) {
+      this.customFloorMat.uniforms.iResolution.value.set(
+        window.innerWidth,
+        window.innerHeight
+      );
+      const rtSize = this.reflectorMaterial?.renderTargetSize;
+      if (rtSize) {
+        this.customFloorMat.uniforms.uMipmapTextureSize.value.copy(rtSize);
+      }
+    }
+  };
 
   dispose() {
     // 从场景中移除
@@ -166,6 +205,7 @@ export default class StartRoom {
     if (this.customFloorMat) {
       this.customFloorMat.dispose();
     }
+    window.removeEventListener("resize", this.onResize);
 
     // 清理其他材质
     this.modelParts.forEach((part) => {
@@ -185,3 +225,5 @@ export default class StartRoom {
     });
   }
 }
+
+
